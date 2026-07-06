@@ -337,6 +337,8 @@
   <button id="admin-btn" style="display:none;margin-left:8px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 14px;border-radius:9999px;font-size:0.875rem;cursor:pointer;">⚙️ 管理</button>
   <button id="logout-btn" style="display:none;margin-left:4px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.8);padding:4px 14px;border-radius:9999px;font-size:0.875rem;cursor:pointer;">ログアウト</button>
   <button id="help-btn" style="margin-left:8px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 14px;border-radius:9999px;font-size:0.875rem;cursor:pointer;">使い方</button>
+  <a href="skills.html" style="margin-left:4px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 14px;border-radius:9999px;font-size:0.875rem;text-decoration:none;">⚡ スキル</a>
+  <a href="tools.html" style="margin-left:4px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 14px;border-radius:9999px;font-size:0.875rem;text-decoration:none;">📦 ツール</a>
 </header>
 <main>
   <div id="error-box"></div>
@@ -701,7 +703,7 @@
             if (!confirm('「' + taskId + '」を取り消し（git reset）しますか？')) return;
             submitAction('reject');
           });
-        })(approveBtn, rejectBtn, resultDiv, a.id, a.review_id);
+        })(approveBtn, rejectBtn, resultDiv, a.task_id || a.id, a.review_id);
       } else {
         // viewer: 操作誘導注記
         var noteDiv = document.createElement('div');
