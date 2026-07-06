@@ -230,6 +230,70 @@
   /* ローディングスピナー */
   .spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid #cbd5e1; border-top-color: var(--color-primary); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 6px; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 承認ボタン */
+  .ap-btn-row { display: flex; gap: var(--space-2); margin-top: 10px; flex-wrap: wrap; }
+  .ap-btn {
+    border: none; border-radius: var(--radius-sm); padding: 10px 20px;
+    font-size: var(--text-sm); font-weight: 700; cursor: pointer;
+    font-family: var(--font-family); min-height: 44px; transition: filter .15s;
+  }
+  .ap-btn:hover:not(:disabled) { filter: brightness(0.9); }
+  .ap-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .ap-btn.approve { background: #15803d; color: #fff; }
+  .ap-btn.reject  { background: var(--sem-err-bg); color: var(--sem-err-text); border: 1px solid #fca5a5; }
+  .ap-btn-result { font-size: var(--text-sm); margin-top: 6px; padding: 6px 10px; border-radius: var(--radius-sm); }
+  .ap-btn-result.ok  { background: var(--sem-ok-bg); color: var(--sem-ok-text); }
+  .ap-btn-result.err { background: var(--sem-err-bg); color: var(--sem-err-text); }
+
+  /* AIチャット（サイドバー内） */
+  #chat-section { margin-top: var(--space-4); border-top: 1px solid var(--color-border); padding-top: var(--space-4); }
+  #chat-section h4 { margin: 0 0 8px; font-size: var(--text-base); }
+  #chat-messages { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .chat-msg { padding: 8px 12px; border-radius: var(--radius-sm); font-size: var(--text-sm); line-height: 1.55; }
+  .chat-msg.user { background: var(--sem-info-bg); color: var(--sem-info-text); align-self: flex-end; max-width: 90%; }
+  .chat-msg.assistant { background: var(--color-bg); border: 1px solid var(--color-border); align-self: flex-start; max-width: 95%; }
+  #chat-input-row { display: flex; gap: 6px; }
+  #chat-input {
+    flex: 1; border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+    padding: 8px 12px; font-family: var(--font-family); font-size: 16px; resize: none; min-height: 44px;
+  }
+  #chat-send {
+    background: var(--color-primary); color: #fff; border: none; border-radius: var(--radius-sm);
+    padding: 8px 16px; font-weight: 700; cursor: pointer; font-size: var(--text-sm);
+    font-family: var(--font-family); min-width: 64px; min-height: 44px;
+  }
+  #chat-send:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  /* 指示入力欄 */
+  #instruction-box {
+    background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md);
+    padding: var(--space-4); margin-bottom: var(--space-4);
+  }
+  #instruction-box h3 { margin: 0 0 10px; font-size: var(--text-base); color: var(--color-text); }
+  #instruction-input-row { display: flex; gap: var(--space-2); align-items: flex-end; }
+  #instruction-textarea {
+    flex: 1; border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+    padding: 10px 14px; font-family: var(--font-family); font-size: 16px;
+    resize: vertical; min-height: 3em; line-height: 1.5;
+  }
+  #instruction-send {
+    background: var(--color-primary); color: #fff; border: none; border-radius: var(--radius-sm);
+    padding: 0 20px; font-weight: 700; cursor: pointer; font-size: var(--text-sm);
+    font-family: var(--font-family); min-height: 44px; white-space: nowrap;
+    align-self: stretch;
+  }
+  #instruction-send:disabled { opacity: 0.55; cursor: not-allowed; }
+  .instr-list { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .instr-item { display: flex; align-items: baseline; gap: 8px; font-size: var(--text-sm); }
+  .instr-item .ist { white-space: nowrap; color: var(--color-text-sub); font-size: var(--text-xs); }
+  .instr-badge { font-size: var(--text-xs); padding: 2px 10px; border-radius: var(--radius-full); font-weight: 600; white-space: nowrap; }
+  .instr-badge.pending  { background: #fef3c7; color: #b45309; }
+  .instr-badge.queued   { background: #fef3c7; color: #b45309; }
+  .instr-badge.running  { background: var(--sem-info-bg); color: var(--sem-info-text); }
+  .instr-badge.done     { background: var(--sem-ok-bg); color: var(--sem-ok-text); }
+  .instr-badge.failed   { background: var(--sem-err-bg); color: var(--sem-err-text); }
+  .instr-badge.rejected_unauthorized { background: var(--sem-err-bg); color: var(--sem-err-text); }
 </style>
 </head>
 <body>
@@ -277,10 +341,14 @@
 <main>
   <div id="error-box"></div>
 
-  <!-- ローカル操作誘導バナー（Phase 1 — 承認・AIチャットはローカル版から） -->
-  <div class="local-only-banner" id="local-ops-banner">
-    💡 承認・却下・AIチャットなどの操作は <strong>作業PC のローカル版ダッシュボード</strong> から行ってください。
-    このブラウザ版は閲覧専用（リアルタイム更新）です。
+  <!-- 指示入力欄（adminのみ表示） -->
+  <div id="instruction-box" style="display:none;">
+    <h3>📝 Claudeへ指示</h3>
+    <div id="instruction-input-row">
+      <textarea id="instruction-textarea" placeholder="例: RS-003をpushして" rows="2"></textarea>
+      <button id="instruction-send">送信</button>
+    </div>
+    <div class="instr-list" id="instr-recent"></div>
   </div>
 
   <section>
@@ -307,6 +375,15 @@
 <aside id="sidebar" aria-label="作業詳細">
   <div id="sb-head"><h3 id="sb-title"></h3><button id="sb-close" title="閉じる">✕</button></div>
   <div id="sb-body"></div>
+  <!-- AIチャット（adminのみ・サイドバーが承認待ちタスクで開いたとき表示） -->
+  <div id="chat-section" style="display:none;padding:var(--space-4) var(--space-6) var(--space-6);">
+    <h4>💬 AIに質問（このタスクについて）</h4>
+    <div id="chat-messages"></div>
+    <div id="chat-input-row">
+      <textarea id="chat-input" placeholder="例: このタスクで何が変わりますか？" rows="2"></textarea>
+      <button id="chat-send">送信</button>
+    </div>
+  </div>
 </aside>
 
 <script>
@@ -321,8 +398,13 @@
   var currentUserEmail = null;
   var currentUserIsAdmin = false;
   var unsubscribeDashboard = null;
+  var unsubInstructions = null;
   var lastD = null; // 最後に描画したデータ
   var currentFilter = 'すべて';
+  var currentChatTaskId = null; // サイドバーで開いているタスクID
+  var chatMessages = []; // チャット会話履歴
+  // 承認カードのステータス追跡（docId → unsubscribe関数）
+  var approvalUnsubMap = {};
 
   // ── 初期化 ────────────────────────────────────────────────────────────
   function init() {
@@ -340,6 +422,8 @@
     bindSidebar();
     bindHelpButton();
     bindAdminModal();
+    bindInstructionBox();
+    bindChat();
 
     auth.onAuthStateChanged(function (user) {
       if (!user) {
@@ -416,8 +500,10 @@
     document.getElementById('logout-btn').title = email;
     if (isAdmin) {
       document.getElementById('admin-btn').style.display = '';
+      document.getElementById('instruction-box').style.display = '';
     }
     subscribeDashboard();
+    if (isAdmin) subscribeInstructions();
   }
 
   // ── Firestore 購読 ────────────────────────────────────────────────────
@@ -476,8 +562,12 @@
     renderFeed(D.feed || []);
   }
 
-  // ── 承認待ち（Phase 1: 操作ボタンは非表示・注記のみ） ────────────────
+  // ── 承認待ち（Phase 2: adminは承認/却下ボタン + AIチャット） ──────────
   function renderApprovals(approvals) {
+    // 古いonSnapshot解除（承認カード）
+    Object.values(approvalUnsubMap).forEach(function (fn) { try { fn(); } catch { /* ignore */ } });
+    approvalUnsubMap = {};
+
     var apDiv = document.getElementById('approvals');
     document.getElementById('approvals-count').textContent = '（' + approvals.length + '件）';
     apDiv.innerHTML = '';
@@ -490,6 +580,7 @@
     approvals.forEach(function (a) {
       var el = document.createElement('div');
       el.className = 'approval';
+      el.dataset.taskId = a.id;
 
       // ヘッダー行
       var header = document.createElement('div');
@@ -507,11 +598,11 @@
       }
       header.appendChild(aidSpan);
       header.appendChild(titleSpan);
-      header.addEventListener('click', function () {
-        openSidebar('承認待ち: ' + a.id,
-          a.detail && a.detail['本文'] ? null : a.detail,
-          a.detail && a.detail['本文'] ? a.detail['本文'] : '');
-      });
+      header.addEventListener('click', (function (taskId, detail, desc) {
+        return function () {
+          openApprovalSidebar(taskId, detail, desc);
+        };
+      })(a.id, a.detail, a.description));
       el.appendChild(header);
 
       if (a.description) {
@@ -527,17 +618,118 @@
         el.appendChild(diffDiv);
       }
 
-      // Phase 1: 承認・却下ボタンの代わりに操作誘導注記
-      var noteDiv = document.createElement('div');
-      noteDiv.className = 'ap-action-note';
-      noteDiv.textContent = '操作（採用 / 取り消し）は作業PC のローカル版ダッシュボードから: ';
-      var codeSpan = document.createElement('code');
-      codeSpan.textContent = 'open_dashboard.cmd';
-      noteDiv.appendChild(codeSpan);
-      el.appendChild(noteDiv);
+      if (currentUserIsAdmin && !a.no_buttons) {
+        // 承認/却下ボタン（no_buttons=true の自動復旧カード等では表示しない）
+        var btnRow = document.createElement('div');
+        btnRow.className = 'ap-btn-row';
+        var approveBtn = document.createElement('button');
+        approveBtn.className = 'ap-btn approve';
+        approveBtn.textContent = '✅ 採用';
+        var rejectBtn = document.createElement('button');
+        rejectBtn.className = 'ap-btn reject';
+        rejectBtn.textContent = '❌ 取り消し';
+        btnRow.appendChild(approveBtn);
+        btnRow.appendChild(rejectBtn);
+        el.appendChild(btnRow);
+
+        var resultDiv = document.createElement('div');
+        resultDiv.className = 'ap-btn-result';
+        resultDiv.style.display = 'none';
+        el.appendChild(resultDiv);
+
+        (function (apvBtn, rejBtn, resDiv, taskId, reviewId) {
+          function setLoading(yes) {
+            apvBtn.disabled = yes;
+            rejBtn.disabled = yes;
+            if (yes) {
+              apvBtn.innerHTML = '<span class="spinner"></span> 処理中…';
+              rejBtn.disabled = true;
+            } else {
+              apvBtn.textContent = '✅ 採用';
+            }
+          }
+
+          function submitAction(type) {
+            setLoading(true);
+            var docRef = db.collection('approval_requests').doc();
+            var docId = docRef.id;
+            docRef.set({
+              type: type,
+              task_id: taskId,
+              review_id: reviewId || null,
+              status: 'pending',
+              requestedBy: currentUserEmail,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            }).then(function () {
+              // onSnapshotでステータス変化を監視
+              var unsub = db.collection('approval_requests').doc(docId).onSnapshot(function (snap) {
+                if (!snap.exists) return;
+                var d = snap.data();
+                if (d.status === 'running') {
+                  apvBtn.innerHTML = '<span class="spinner"></span> 処理中…';
+                  return;
+                }
+                if (d.status === 'done' || d.status === 'failed') {
+                  unsub();
+                  delete approvalUnsubMap[docId];
+                  setLoading(false);
+                  resDiv.style.display = '';
+                  resDiv.className = 'ap-btn-result ' + (d.status === 'done' ? 'ok' : 'err');
+                  resDiv.textContent = d.result || (d.status === 'done' ? '完了' : '失敗');
+                  if (d.status === 'done') {
+                    apvBtn.style.display = 'none';
+                    rejBtn.style.display = 'none';
+                  }
+                }
+              });
+              approvalUnsubMap[docId] = unsub;
+            }).catch(function (e) {
+              setLoading(false);
+              resDiv.style.display = '';
+              resDiv.className = 'ap-btn-result err';
+              resDiv.textContent = '送信失敗: ' + e.message;
+            });
+          }
+
+          apvBtn.addEventListener('click', function (ev) {
+            ev.stopPropagation();
+            if (!confirm('「' + taskId + '」を採用（git push）しますか？')) return;
+            submitAction('approve');
+          });
+          rejBtn.addEventListener('click', function (ev) {
+            ev.stopPropagation();
+            if (!confirm('「' + taskId + '」を取り消し（git reset）しますか？')) return;
+            submitAction('reject');
+          });
+        })(approveBtn, rejectBtn, resultDiv, a.id, a.review_id);
+      } else {
+        // viewer: 操作誘導注記
+        var noteDiv = document.createElement('div');
+        noteDiv.className = 'ap-action-note';
+        noteDiv.textContent = '操作（採用 / 取り消し）は管理者のみ行えます。';
+        el.appendChild(noteDiv);
+      }
 
       apDiv.appendChild(el);
     });
+  }
+
+  // 承認待ちカードをクリック→サイドバーにAIチャットも表示
+  function openApprovalSidebar(taskId, detail, desc) {
+    var kv = {};
+    if (detail) {
+      Object.keys(detail).forEach(function (k) {
+        if (k !== 'メモ' && k !== 'Slackリンク' && k !== '本文') kv[k] = detail[k];
+      });
+    }
+    var detailText = (detail && detail['本文']) || (detail && detail['メモ']) || '';
+    openSidebar('承認待ち: ' + taskId, Object.keys(kv).length ? kv : null, detailText);
+    if (currentUserIsAdmin) {
+      currentChatTaskId = taskId;
+      chatMessages = [];
+      document.getElementById('chat-messages').innerHTML = '';
+      document.getElementById('chat-section').style.display = '';
+    }
   }
 
   // ── タスク一覧 ─────────────────────────────────────────────────────────
@@ -654,7 +846,6 @@
     document.getElementById('sb-body').innerHTML = html;
     document.body.classList.add('sb-open');
   }
-  function closeSidebar() { document.body.classList.remove('sb-open'); }
 
   function bindSidebar() {
     document.getElementById('overlay').addEventListener('click', closeSidebar);
@@ -764,6 +955,166 @@
       .catch(function (e) {
         container.innerHTML = '<span style="color:var(--sem-err-text)">読み込みエラー: ' + esc(e.message) + '</span>';
       });
+  }
+
+  // ── 指示入力欄 ───────────────────────────────────────────────────────
+
+  function bindInstructionBox() {
+    var sendBtn = document.getElementById('instruction-send');
+    var textarea = document.getElementById('instruction-textarea');
+    if (!sendBtn || !textarea) return;
+
+    sendBtn.addEventListener('click', function () {
+      var text = textarea.value.trim();
+      if (!text) return;
+      if (!currentUserIsAdmin) return;
+      sendBtn.disabled = true;
+      sendBtn.textContent = '送信中…';
+      db.collection('dashboard_instructions').add({
+        text: text,
+        status: 'pending',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        source: 'dashboard',
+        requestedBy: currentUserEmail,
+        result: null,
+      }).then(function () {
+        textarea.value = '';
+        sendBtn.disabled = false;
+        sendBtn.textContent = '送信';
+      }).catch(function (e) {
+        sendBtn.disabled = false;
+        sendBtn.textContent = '送信';
+        alert('送信失敗: ' + e.message);
+      });
+    });
+
+    // Ctrl+Enter で送信
+    textarea.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        sendBtn.click();
+      }
+    });
+  }
+
+  function subscribeInstructions() {
+    if (unsubInstructions) unsubInstructions();
+    var recentDiv = document.getElementById('instr-recent');
+    // 最近の指示5件をcreatedAt降順でonSnapshot
+    var q = db.collection('dashboard_instructions')
+      .orderBy('createdAt', 'desc')
+      .limit(5);
+    unsubInstructions = q.onSnapshot(function (snap) {
+      if (!recentDiv) return;
+      recentDiv.innerHTML = '';
+      if (snap.empty) {
+        recentDiv.innerHTML = '<span style="color:var(--color-text-sub);font-size:var(--text-sm);">まだ指示はありません</span>';
+        return;
+      }
+      snap.forEach(function (doc) {
+        var d = doc.data();
+        var row = document.createElement('div');
+        row.className = 'instr-item';
+        var badge = document.createElement('span');
+        badge.className = 'instr-badge ' + (d.status || 'pending');
+        var statusLabel = { pending: '待機中', queued: '待機中', running: '実行中', done: '完了', failed: '失敗', rejected_unauthorized: '権限エラー' };
+        badge.textContent = statusLabel[d.status] || d.status || '待機中';
+        var textSpan = document.createElement('span');
+        textSpan.textContent = (d.text || '').slice(0, 50) + ((d.text || '').length > 50 ? '…' : '');
+        textSpan.title = d.text || '';
+        var ts = document.createElement('span');
+        ts.className = 'ist';
+        if (d.createdAt && d.createdAt.toDate) {
+          var dt = d.createdAt.toDate();
+          ts.textContent = (dt.getMonth() + 1) + '/' + dt.getDate() + ' ' +
+            String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0');
+        }
+        row.appendChild(badge);
+        row.appendChild(textSpan);
+        row.appendChild(ts);
+        if (d.result) {
+          var res = document.createElement('span');
+          res.style.cssText = 'font-size:var(--text-xs);color:var(--color-text-sub);margin-left:4px;';
+          res.textContent = '→ ' + String(d.result).slice(0, 40);
+          res.title = d.result;
+          row.appendChild(res);
+        }
+        recentDiv.appendChild(row);
+      });
+    }, function () { /* ignore */ });
+  }
+
+  // ── AIチャット（サイドバー内） ────────────────────────────────────────
+
+  function bindChat() {
+    var sendBtn = document.getElementById('chat-send');
+    var input   = document.getElementById('chat-input');
+    if (!sendBtn || !input) return;
+
+    sendBtn.addEventListener('click', function () {
+      var text = input.value.trim();
+      if (!text || !currentChatTaskId) return;
+      sendBtn.disabled = true;
+      sendBtn.textContent = '…';
+
+      // ユーザーメッセージをUIに追加
+      chatMessages.push({ role: 'user', content: text });
+      appendChatMsg('user', text);
+      input.value = '';
+
+      // chat_requests に addDoc
+      db.collection('chat_requests').add({
+        task_id: currentChatTaskId,
+        messages: chatMessages.slice(),
+        status: 'pending',
+        requestedBy: currentUserEmail,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      }).then(function (docRef) {
+        // onSnapshotで返答を待つ
+        var unsub = docRef.onSnapshot(function (snap) {
+          if (!snap.exists) return;
+          var d = snap.data();
+          if (d.status === 'done' || d.status === 'failed') {
+            unsub();
+            sendBtn.disabled = false;
+            sendBtn.textContent = '送信';
+            var reply = d.reply || (d.status === 'done' ? '（返答なし）' : 'エラーが発生しました');
+            chatMessages.push({ role: 'assistant', content: reply });
+            appendChatMsg('assistant', reply);
+          }
+        });
+      }).catch(function (e) {
+        sendBtn.disabled = false;
+        sendBtn.textContent = '送信';
+        appendChatMsg('assistant', '送信エラー: ' + e.message);
+      });
+    });
+
+    // Enter で送信（Shift+Enter は改行）
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendBtn.click();
+      }
+    });
+  }
+
+  function appendChatMsg(role, text) {
+    var container = document.getElementById('chat-messages');
+    if (!container) return;
+    var el = document.createElement('div');
+    el.className = 'chat-msg ' + role;
+    el.textContent = text;
+    container.appendChild(el);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  // closeSidebar はチャット状態もリセット（bindSidebar より後に定義する必要あり・後置上書き）
+  function closeSidebar() {
+    document.body.classList.remove('sb-open');
+    document.getElementById('chat-section').style.display = 'none';
+    currentChatTaskId = null;
+    chatMessages = [];
   }
 
   // ── 起動 ─────────────────────────────────────────────────────────────
