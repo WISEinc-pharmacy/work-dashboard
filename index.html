@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wise 作業ダッシュボード</title>
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"
+  integrity="sha384-ViccRjS0k/lvYsrtaKXk+ES61/4PAZlFI/mPHmLC1YWzK0AIbXbI5ZXDzcm3F8gH"
+  crossorigin="anonymous"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"
+  integrity="sha384-+/4lqMnmLqwbdHXshvGDmBTeWlNoPRdjXi4ZsiBj10EhQXaTBe3RF5JZktdSjug6"
+  crossorigin="anonymous"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"
+  integrity="sha384-7TetnPNdXXu6qURzIEXWCwpXedGGBJSXIR5Cv0gOWTB34UD5TxPHx33PhjA6wFQ3"
+  crossorigin="anonymous"></script>
+<!-- Firebase プロジェクト設定（公開済み識別子・秘密情報ではない） -->
+<script src="firebase-config.js"></script>
+<style>
+  /* WISE Group Design System（design_system.md デフォルト仕様準拠） */
+  :root {
+    --color-primary:    #3b82f6;
+    --color-secondary:  #6366f1;
+    --color-accent:     #06b6d4;
+    --color-bg:         #f8fafc;
+    --color-surface:    #ffffff;
+    --color-text:       #1e293b;
+    --color-text-sub:   #64748b;
+    --color-border:     #e2e8f0;
+
+    --font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+    --text-xs:    0.75rem;
+    --text-sm:    0.875rem;
+    --text-base:  1rem;
+    --text-lg:    1.125rem;
+    --text-xl:    1.25rem;
+    --text-2xl:   1.5rem;
+    --leading-normal: 1.7;
+
+    --space-2:   8px;
+    --space-3:  12px;
+    --space-4:  16px;
+    --space-6:  24px;
+    --space-8:  32px;
+
+    --radius-sm:   6px;
+    --radius-md:  10px;
+    --radius-lg:  16px;
+    --radius-full: 9999px;
+
+    --sem-warn-text: #b45309; --sem-warn-bg: #fef3c7; --sem-warn-border: #f0d48a;
+    --sem-ok-text: #15803d;   --sem-ok-bg: #dcfce7;
+    --sem-err-text: #b91c1c;  --sem-err-bg: #fee2e2;
+    --sem-info-text: #1d4ed8; --sem-info-bg: #dbeafe;
+    --sem-batch-text: #6d28d9; --sem-batch-bg: #ede9fe;
+    --sem-accent-text: #0e7490; --sem-accent-bg: #cffafe;
+    --sem-wish-text: #475569; --sem-wish-bg: #e2e8f0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--color-bg); color: var(--color-text);
+    font-family: var(--font-family);
+    font-size: var(--text-lg); line-height: var(--leading-normal);
+  }
+  header {
+    background: var(--color-primary); color: #fff; padding: var(--space-4) var(--space-6);
+    display: flex; align-items: baseline; gap: var(--space-4); flex-wrap: wrap;
+    position: sticky; top: 0; z-index: 200;
+  }
+  header h1 { font-size: var(--text-2xl); margin: 0; font-weight: 700; }
+  header .meta { color: rgba(255,255,255,.85); font-size: var(--text-sm); }
+  header .engine {
+    margin-left: auto; font-size: var(--text-sm); font-weight: 700;
+    background: #fef3c7; color: #b45309; border: 2px solid #fcd34d;
+    padding: 5px 16px; border-radius: var(--radius-full);
+  }
+  main { max-width: 1280px; margin: 0 auto; padding: var(--space-6) var(--space-6) 80px; }
+  h2 { font-size: var(--text-xl); margin: var(--space-8) 0 var(--space-3); color: var(--color-text); }
+  h2 .count { color: var(--color-text-sub); font-weight: normal; font-size: var(--text-base); }
+
+  /* ローカル版操作誘導バナー */
+  .local-only-banner {
+    background: var(--sem-info-bg); border: 1px solid #93c5fd; border-radius: var(--radius-sm);
+    padding: 8px 16px; margin-bottom: var(--space-3); font-size: var(--text-sm);
+    color: var(--sem-info-text);
+  }
+
+  /* 承認待ちカード */
+  .approval {
+    background: var(--sem-warn-bg); border: 1px solid var(--sem-warn-border); border-left: 5px solid var(--sem-warn-text);
+    border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); margin-bottom: var(--space-3); cursor: pointer;
+  }
+  .approval:hover { filter: brightness(0.98); }
+  .approval .aid { font-weight: 700; color: var(--sem-warn-text); margin-right: var(--space-2); font-size: var(--text-lg); }
+  .approval .action { font-size: var(--text-sm); color: var(--color-text-sub); margin-top: 6px; }
+  .ap-desc { font-size: var(--text-sm); color: var(--color-text); margin: 6px 0 10px; line-height: 1.5; }
+  .ap-diff { font-size: var(--text-xs); font-family: Consolas, monospace; color: var(--color-text-sub); margin-bottom: 8px; }
+  .ap-action-note {
+    font-size: var(--text-sm); color: var(--sem-info-text); background: var(--sem-info-bg);
+    border-radius: var(--radius-sm); padding: 6px 12px; margin-top: 8px;
+    border: 1px solid #93c5fd;
+  }
+  .none-note { color: var(--color-text-sub); font-size: var(--text-base); }
+
+  /* フィルタチップ */
+  .chips { display: flex; gap: var(--space-2); margin-bottom: var(--space-3); flex-wrap: wrap; }
+  .chip {
+    border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-sub);
+    font-size: var(--text-sm); padding: 6px 16px; border-radius: var(--radius-full); cursor: pointer;
+    font-family: var(--font-family); transition: all 0.2s ease;
+  }
+  .chip:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .chip:focus { outline: 2px solid var(--color-primary); }
+  .chip.on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; font-weight: 700; }
+
+  /* テーブル */
+  table { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+  th, td { text-align: left; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); }
+  th { background: var(--color-primary); color: #fff; font-size: var(--text-sm); font-weight: 600; white-space: nowrap; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: var(--color-bg); }
+  tbody tr:last-child td { border-bottom: none; }
+  td { font-size: var(--text-base); }
+  td.summary { font-size: var(--text-sm); color: var(--color-text-sub); max-width: 220px; white-space: normal; line-height: 1.4; }
+  .badge { display: inline-block; font-size: var(--text-sm); padding: 3px 14px; border-radius: var(--radius-full); font-weight: 600; white-space: nowrap; }
+  .badge.needs_review { background: var(--sem-warn-bg); color: var(--sem-warn-text); }
+  .badge.done { background: var(--sem-ok-bg); color: var(--sem-ok-text); }
+  .badge.failed { background: var(--sem-err-bg); color: var(--sem-err-text); }
+  .badge.pending { background: var(--sem-info-bg); color: var(--sem-info-text); }
+  .badge.active { background: var(--sem-info-bg); color: var(--sem-info-text); }
+  .badge.priority { background: var(--sem-accent-bg); color: var(--sem-accent-text); }
+  .badge.wish { background: var(--sem-wish-bg); color: var(--sem-wish-text); }
+  .badge.unknown  { background: var(--sem-wish-bg); color: var(--color-text-sub); }
+  .badge.open     { background: #fce7f3; color: #9d174d; }
+  .badge.waiting  { background: var(--sem-warn-bg); color: var(--sem-warn-text); }
+  .typetag { display: inline-block; font-size: var(--text-xs); padding: 2px 10px; border-radius: var(--radius-full); white-space: nowrap; }
+  .typetag.batch    { background: var(--sem-batch-bg); color: var(--sem-batch-text); }
+  .typetag.pj       { background: var(--sem-info-bg); color: var(--sem-info-text); }
+  .typetag.wl       { background: var(--sem-accent-bg); color: var(--sem-accent-text); }
+  .typetag.reaction { background: #fce7f3; color: #9d174d; }
+  td.mono, .mono { font-family: Consolas, monospace; font-size: var(--text-sm); }
+
+  /* フィード */
+  .feed { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+  .feed-item {
+    display: flex; gap: var(--space-4); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border);
+    cursor: pointer; align-items: baseline;
+  }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-item:hover { background: var(--color-bg); }
+  .feed-item .ts { color: var(--color-text-sub); font-size: var(--text-sm); white-space: nowrap; min-width: 148px; }
+  .feed-item .tag {
+    font-size: var(--text-xs); padding: 2px 10px; border-radius: var(--radius-full); white-space: nowrap;
+    background: var(--sem-info-bg); color: var(--sem-info-text);
+  }
+  .feed-item .tag.batch { background: var(--sem-batch-bg); color: var(--sem-batch-text); }
+
+  /* サイドバー */
+  #overlay {
+    position: fixed; inset: 0; background: rgba(30, 41, 59, 0.35);
+    opacity: 0; pointer-events: none; transition: opacity .2s ease;
+  }
+  #sidebar {
+    position: fixed; top: 0; right: 0; height: 100%; width: min(620px, 94vw);
+    background: var(--color-surface); box-shadow: -6px 0 24px rgba(0,0,0,.18);
+    transform: translateX(105%); transition: transform .25s ease-out; display: flex; flex-direction: column;
+  }
+  body.sb-open #overlay { opacity: 1; pointer-events: auto; }
+  body.sb-open #sidebar { transform: translateX(0); }
+  #sb-head { background: var(--color-primary); color: #fff; padding: var(--space-4); display: flex; gap: var(--space-2); align-items: flex-start; }
+  #sb-head h3 { margin: 0; font-size: var(--text-lg); flex: 1; line-height: 1.5; }
+  #sb-close { background: none; border: none; color: rgba(255,255,255,.8); font-size: var(--text-2xl); cursor: pointer; padding: 0 4px; }
+  #sb-close:hover { color: #fff; }
+  #sb-close:focus { outline: 2px solid #fff; }
+  #sb-body { padding: var(--space-4) var(--space-6); overflow-y: auto; flex: 1; }
+  .kv { display: grid; grid-template-columns: 130px 1fr; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-4); }
+  .kv dt { color: var(--color-text-sub); font-size: var(--text-sm); }
+  .kv dd { margin: 0; word-break: break-all; font-size: var(--text-base); }
+  #sb-body pre {
+    background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+    padding: var(--space-4); font-size: var(--text-sm); white-space: pre-wrap; word-break: break-all;
+    font-family: Consolas, "MS Gothic", monospace;
+  }
+  #error-box { background: var(--sem-err-bg); color: var(--sem-err-text); padding: var(--space-4); border-radius: var(--radius-md); margin-top: var(--space-6); display: none; }
+
+  /* 認証オーバーレイ */
+  #auth-overlay {
+    position: fixed; inset: 0; background: var(--color-bg);
+    display: flex; align-items: center; justify-content: center; z-index: 9999;
+  }
+  #auth-card {
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg); padding: 40px; text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,.12); max-width: 380px; width: 90%;
+  }
+  #auth-card h2 { margin: 0 0 8px; font-size: var(--text-xl); }
+  #auth-card p { color: var(--color-text-sub); font-size: var(--text-sm); margin: 0 0 24px; }
+  #auth-card .logo { font-size: 2.5rem; margin-bottom: 12px; }
+  #login-btn {
+    background: var(--color-primary); color: #fff; border: none; border-radius: var(--radius-sm);
+    padding: 12px 28px; font-size: var(--text-base); font-weight: 700; cursor: pointer;
+    font-family: var(--font-family); width: 100%;
+  }
+  #login-btn:hover { filter: brightness(0.9); }
+  #login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  #auth-status { margin-top: 16px; font-size: var(--text-sm); color: var(--color-text-sub); }
+
+  /* 管理者モーダル */
+  #admin-modal {
+    position: fixed; inset: 0; background: rgba(30,41,59,.5);
+    display: none; align-items: center; justify-content: center; z-index: 8000;
+  }
+  #admin-modal.open { display: flex; }
+  #admin-inner {
+    background: var(--color-surface); border-radius: var(--radius-lg);
+    padding: var(--space-6); width: min(520px, 94vw); box-shadow: 0 8px 32px rgba(0,0,0,.18);
+    max-height: 80vh; overflow-y: auto;
+  }
+  #admin-inner h3 { margin: 0 0 16px; }
+  .admin-user-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--color-border); font-size: var(--text-sm); }
+  .admin-user-row .role-badge { font-size: var(--text-xs); padding: 2px 8px; border-radius: var(--radius-full); background: var(--sem-info-bg); color: var(--sem-info-text); white-space: nowrap; }
+  .admin-user-row .role-badge.admin { background: var(--sem-accent-bg); color: var(--sem-accent-text); }
+  .admin-user-row button { border: none; background: var(--sem-err-bg); color: var(--sem-err-text); border-radius: var(--radius-sm); padding: 2px 10px; cursor: pointer; font-size: var(--text-xs); }
+  #admin-add-row { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; align-items: center; }
+  #admin-new-email { flex: 1; min-width: 200px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 8px 12px; font-family: var(--font-family); font-size: var(--text-sm); }
+  #admin-role-select { border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 8px 12px; font-family: var(--font-family); font-size: var(--text-sm); background: var(--color-surface); }
+  #admin-add-btn { background: #15803d; color: #fff; border: none; border-radius: var(--radius-sm); padding: 8px 16px; font-weight: 700; cursor: pointer; font-size: var(--text-sm); white-space: nowrap; }
+  #admin-result { font-size: var(--text-sm); margin-top: 8px; min-height: 20px; }
+
+  /* ローディングスピナー */
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid #cbd5e1; border-top-color: var(--color-primary); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- 認証オーバーレイ -->
+<div id="auth-overlay">
+  <div id="auth-card">
+    <div class="logo">📊</div>
+    <h2>Wise 作業ダッシュボード</h2>
+    <p>社内向けシステムです。Googleアカウントでログインしてください。</p>
+    <button id="login-btn">🔐 Googleでログイン</button>
+    <div id="auth-status"></div>
+  </div>
+</div>
+
+<!-- 管理者モーダル（アクセス管理 — Firestore users コレクション直接操作） -->
+<div id="admin-modal">
+  <div id="admin-inner">
+    <h3>⚙️ アクセス管理</h3>
+    <div id="admin-user-list"><span class="spinner"></span> 読み込み中…</div>
+    <div id="admin-add-row">
+      <input id="admin-new-email" type="email" placeholder="追加するメールアドレス">
+      <select id="admin-role-select">
+        <option value="viewer">viewer（閲覧のみ）</option>
+        <option value="admin">admin（管理権限）</option>
+      </select>
+      <button id="admin-add-btn">追加</button>
+    </div>
+    <div id="admin-result"></div>
+    <div style="text-align:right;margin-top:16px;">
+      <button id="admin-close-btn" style="border:1px solid var(--color-border);background:none;border-radius:var(--radius-sm);padding:8px 16px;cursor:pointer;">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<header>
+  <h1>Wise 作業ダッシュボード</h1>
+  <span class="meta" id="generated"></span>
+  <span class="meta" id="realtime-status">● リアルタイム購読中</span>
+  <span class="engine" id="engine"></span>
+  <button id="admin-btn" style="display:none;margin-left:8px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 14px;border-radius:9999px;font-size:0.875rem;cursor:pointer;">⚙️ 管理</button>
+  <button id="logout-btn" style="display:none;margin-left:4px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.8);padding:4px 14px;border-radius:9999px;font-size:0.875rem;cursor:pointer;">ログアウト</button>
+  <button id="help-btn" style="margin-left:8px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 14px;border-radius:9999px;font-size:0.875rem;cursor:pointer;">使い方</button>
+</header>
+<main>
+  <div id="error-box"></div>
+
+  <!-- ローカル操作誘導バナー（Phase 1 — 承認・AIチャットはローカル版から） -->
+  <div class="local-only-banner" id="local-ops-banner">
+    💡 承認・却下・AIチャットなどの操作は <strong>作業PC のローカル版ダッシュボード</strong> から行ってください。
+    このブラウザ版は閲覧専用（リアルタイム更新）です。
+  </div>
+
+  <section>
+    <h2>🔔 承認待ち <span class="count" id="approvals-count"></span></h2>
+    <div id="approvals"></div>
+  </section>
+
+  <section>
+    <h2>🗂 タスク一覧 <span class="count" id="tasks-count"></span></h2>
+    <div class="chips" id="chips"></div>
+    <table>
+      <thead><tr><th>作業ID</th><th>種別</th><th>タイトル</th><th>概要</th><th>結果</th><th>最終作業日</th></tr></thead>
+      <tbody id="tasks"></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>📋 直近の作業記録 <span class="count">（夜間バッチ＋退勤ログ・新しい順）</span></h2>
+    <div class="feed" id="feed"></div>
+  </section>
+</main>
+
+<div id="overlay"></div>
+<aside id="sidebar" aria-label="作業詳細">
+  <div id="sb-head"><h3 id="sb-title"></h3><button id="sb-close" title="閉じる">✕</button></div>
+  <div id="sb-body"></div>
+</aside>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── 定数 ──────────────────────────────────────────────────────────────
+  var DIRECTOR_EMAIL = 'director@wise-jmco.com';
+
+  // ── 状態 ──────────────────────────────────────────────────────────────
+  var auth, db;
+  var currentUserEmail = null;
+  var currentUserIsAdmin = false;
+  var unsubscribeDashboard = null;
+  var lastD = null; // 最後に描画したデータ
+  var currentFilter = 'すべて';
+
+  // ── 初期化 ────────────────────────────────────────────────────────────
+  function init() {
+    var config = window.FIREBASE_CONFIG;
+    if (!config || !config.apiKey) {
+      showError('Firebase 設定ファイル (firebase-config.js) が読み込めませんでした。');
+      return;
+    }
+    firebase.initializeApp(config);
+    auth = firebase.auth();
+    db   = firebase.firestore();
+
+    bindLoginButton();
+    bindLogoutButton();
+    bindSidebar();
+    bindHelpButton();
+    bindAdminModal();
+
+    auth.onAuthStateChanged(function (user) {
+      if (!user) {
+        if (unsubscribeDashboard) { unsubscribeDashboard(); unsubscribeDashboard = null; }
+        showLoginOverlay();
+        return;
+      }
+      var email = (user.email || '').toLowerCase();
+      checkAccess(email);
+    });
+  }
+
+  // ── 認証 ─────────────────────────────────────────────────────────────
+  function showLoginOverlay() {
+    document.getElementById('auth-overlay').style.display = 'flex';
+    document.getElementById('admin-btn').style.display  = 'none';
+    document.getElementById('logout-btn').style.display = 'none';
+  }
+  function hideLoginOverlay() {
+    document.getElementById('auth-overlay').style.display = 'none';
+  }
+  function bindLoginButton() {
+    document.getElementById('login-btn').addEventListener('click', function () {
+      var btn = document.getElementById('login-btn');
+      var statusEl = document.getElementById('auth-status');
+      btn.disabled = true;
+      statusEl.textContent = 'ログイン中…';
+      var provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(function (e) {
+        statusEl.textContent = 'ログイン失敗: ' + e.message;
+        btn.disabled = false;
+      });
+    });
+  }
+  function bindLogoutButton() {
+    document.getElementById('logout-btn').addEventListener('click', function () {
+      auth.signOut();
+    });
+  }
+
+  function checkAccess(email) {
+    var statusEl = document.getElementById('auth-status');
+    statusEl.textContent = '確認中…';
+
+    // director は常時 admin（Firestore 参照不要）
+    if (email === DIRECTOR_EMAIL) {
+      grantAccess(email, true);
+      return;
+    }
+    // Firestore users/{email} を確認
+    db.collection('users').doc(email).get().then(function (snap) {
+      if (snap.exists) {
+        var role = snap.data().role;
+        if (role === 'admin' || role === 'viewer') {
+          grantAccess(email, role === 'admin');
+          return;
+        }
+      }
+      // 権限なし
+      statusEl.textContent = (auth.currentUser && auth.currentUser.email || email) +
+        ' はアクセス権限がありません。管理者に連絡してください。';
+      auth.signOut();
+    }).catch(function (e) {
+      statusEl.textContent = 'アクセス確認エラー: ' + e.message;
+      auth.signOut();
+    });
+  }
+
+  function grantAccess(email, isAdmin) {
+    currentUserEmail  = email;
+    currentUserIsAdmin = isAdmin;
+    hideLoginOverlay();
+    document.getElementById('logout-btn').style.display = '';
+    document.getElementById('logout-btn').title = email;
+    if (isAdmin) {
+      document.getElementById('admin-btn').style.display = '';
+    }
+    subscribeDashboard();
+  }
+
+  // ── Firestore 購読 ────────────────────────────────────────────────────
+  function subscribeDashboard() {
+    if (unsubscribeDashboard) unsubscribeDashboard();
+    var realtimeStatus = document.getElementById('realtime-status');
+    unsubscribeDashboard = db.collection('dashboard_data').doc('latest').onSnapshot(
+      function (snap) {
+        if (!snap.exists) {
+          showError('Firestoreにデータがありません。ローカルで push_to_firestore.mjs を実行してください。');
+          return;
+        }
+        realtimeStatus.textContent = '● リアルタイム購読中';
+        realtimeStatus.style.color = '';
+        var D = snap.data();
+        lastD = D;
+        renderDashboard(D);
+      },
+      function (e) {
+        realtimeStatus.textContent = '⚠️ 接続エラー';
+        realtimeStatus.style.color = '#fca5a5';
+        showError('データ読み込みエラー: ' + e.message);
+      }
+    );
+  }
+
+  // ── エスケープ ─────────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  // ── エラー表示 ─────────────────────────────────────────────────────────
+  function showError(msg) {
+    var el = document.getElementById('error-box');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  // ── ダッシュボード描画（現行 index.html の描画ロジックを流用） ────────
+  function renderDashboard(D) {
+    document.getElementById('error-box').style.display = 'none';
+
+    // ヘッダー
+    document.getElementById('generated').textContent = '最終更新: ' + esc(D.generated || '') + ' JST';
+    document.getElementById('engine').textContent = '夜間バッチ既定エンジン: ' + esc(D.engineDefault || '');
+
+    // 承認待ち
+    renderApprovals(D.approvals || []);
+
+    // タスク
+    renderTasks(D.tasks || []);
+
+    // フィード
+    renderFeed(D.feed || []);
+  }
+
+  // ── 承認待ち（Phase 1: 操作ボタンは非表示・注記のみ） ────────────────
+  function renderApprovals(approvals) {
+    var apDiv = document.getElementById('approvals');
+    document.getElementById('approvals-count').textContent = '（' + approvals.length + '件）';
+    apDiv.innerHTML = '';
+
+    if (!approvals.length) {
+      apDiv.innerHTML = '<p class="none-note">現在、山内さんの判断待ちはありません ✅</p>';
+      return;
+    }
+
+    approvals.forEach(function (a) {
+      var el = document.createElement('div');
+      el.className = 'approval';
+
+      // ヘッダー行
+      var header = document.createElement('div');
+      header.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;cursor:pointer;';
+      var aidSpan = document.createElement('span');
+      aidSpan.className = 'aid';
+      aidSpan.textContent = a.id;
+      var titleSpan = document.createElement('span');
+      titleSpan.textContent = a.title;
+      if (a.since) {
+        var sinceSpan = document.createElement('span');
+        sinceSpan.className = 'action';
+        sinceSpan.textContent = '（' + a.since + ' から待機中）';
+        titleSpan.appendChild(sinceSpan);
+      }
+      header.appendChild(aidSpan);
+      header.appendChild(titleSpan);
+      header.addEventListener('click', function () {
+        openSidebar('承認待ち: ' + a.id,
+          a.detail && a.detail['本文'] ? null : a.detail,
+          a.detail && a.detail['本文'] ? a.detail['本文'] : '');
+      });
+      el.appendChild(header);
+
+      if (a.description) {
+        var descDiv = document.createElement('div');
+        descDiv.className = 'ap-desc';
+        descDiv.textContent = a.description;
+        el.appendChild(descDiv);
+      }
+      if (a.diff_stat) {
+        var diffDiv = document.createElement('div');
+        diffDiv.className = 'ap-diff';
+        diffDiv.textContent = '変更: ' + a.diff_stat.split('\n').filter(Boolean).pop();
+        el.appendChild(diffDiv);
+      }
+
+      // Phase 1: 承認・却下ボタンの代わりに操作誘導注記
+      var noteDiv = document.createElement('div');
+      noteDiv.className = 'ap-action-note';
+      noteDiv.textContent = '操作（採用 / 取り消し）は作業PC のローカル版ダッシュボードから: ';
+      var codeSpan = document.createElement('code');
+      codeSpan.textContent = 'open_dashboard.cmd';
+      noteDiv.appendChild(codeSpan);
+      el.appendChild(noteDiv);
+
+      apDiv.appendChild(el);
+    });
+  }
+
+  // ── タスク一覧 ─────────────────────────────────────────────────────────
+  var TYPE_CLASSES = { '夜間バッチ': 'batch', 'プロジェクト': 'pj', 'ウィッシュ': 'wl', '山内確認': 'reaction' };
+  var statusOrder = { open: -1, needs_review: 0, failed: 1, pending: 2, waiting: 2.5, active: 3, priority: 4, wish: 5, done: 6 };
+
+  function renderTasks(tasks) {
+    var sorted = tasks.slice().sort(function (a, b) {
+      var s = ((statusOrder[a.status] != null ? statusOrder[a.status] : 9)) -
+              ((statusOrder[b.status] != null ? statusOrder[b.status] : 9));
+      return s !== 0 ? s : String(b.lastRun || '').localeCompare(String(a.lastRun || ''));
+    });
+
+    // チップ（初回または tasks 数が変わったとき再生成）
+    var chipsDiv = document.getElementById('chips');
+    chipsDiv.innerHTML = '';
+    ['すべて', '夜間バッチ', 'プロジェクト', 'ウィッシュ', '山内確認'].forEach(function (name) {
+      var count = name === 'すべて' ? tasks.length :
+        tasks.filter(function (t) { return t.type === name; }).length;
+      var btn = document.createElement('button');
+      btn.className = 'chip' + (name === currentFilter ? ' on' : '');
+      btn.textContent = name + ' ' + count;
+      btn.addEventListener('click', function () {
+        currentFilter = name;
+        Array.prototype.forEach.call(chipsDiv.children, function (c) { c.classList.remove('on'); });
+        btn.classList.add('on');
+        renderTaskRows(sorted);
+      });
+      chipsDiv.appendChild(btn);
+    });
+
+    renderTaskRows(sorted);
+  }
+
+  function renderTaskRows(sorted) {
+    var tbody = document.getElementById('tasks');
+    tbody.innerHTML = '';
+    var shown = sorted.filter(function (t) { return currentFilter === 'すべて' || t.type === currentFilter; });
+    document.getElementById('tasks-count').textContent = '（' + shown.length + '件）';
+    shown.forEach(function (t) {
+      var tr = document.createElement('tr');
+      var badgeClass = statusOrder.hasOwnProperty(t.status) ? t.status : 'unknown';
+      tr.innerHTML = '<td class="mono">' + esc(t.id) + '</td>' +
+        '<td><span class="typetag ' + esc(TYPE_CLASSES[t.type] || '') + '">' + esc(t.type) + '</span></td>' +
+        '<td title="' + esc(t.title) + '">' + esc(t.shortTitle || t.title) + '</td>' +
+        '<td class="summary">' + esc(((t.detail && t.detail['概要']) || '').slice(0, 100)) + '</td>' +
+        '<td><span class="badge ' + esc(badgeClass) + '">' + esc(t.statusLabel) + '</span></td>' +
+        '<td class="mono">' + esc(t.lastRun) + '</td>';
+      tr.addEventListener('click', function () {
+        var kv = {};
+        Object.keys(t.detail || {}).forEach(function (k) {
+          if (k !== 'メモ' && k !== 'Slackリンク') kv[k] = t.detail[k];
+        });
+        openSidebar(t.id + ' — ' + t.title, kv,
+          t.detail && t.detail['メモ'] ? t.detail['メモ'] : '');
+        if (t.type === '山内確認' && t.detail && t.detail['Slackリンク']) {
+          var rawUrl = t.detail['Slackリンク'];
+          var safeUrl = '';
+          try { var u = new URL(rawUrl); if (u.protocol === 'https:') safeUrl = rawUrl; } catch (e2) {}
+          if (safeUrl) {
+            var sbBody = document.getElementById('sb-body');
+            var linkWrap = document.createElement('div');
+            linkWrap.style.marginTop = '8px';
+            var anchor = document.createElement('a');
+            anchor.href = safeUrl;
+            anchor.target = '_blank';
+            anchor.rel = 'noopener noreferrer';
+            anchor.style.cssText = 'color:var(--color-primary);font-weight:600;';
+            anchor.textContent = 'Slackで開く ↗';
+            linkWrap.appendChild(anchor);
+            sbBody.appendChild(linkWrap);
+          }
+        }
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ── フィード ──────────────────────────────────────────────────────────
+  function renderFeed(feed) {
+    var feedDiv = document.getElementById('feed');
+    feedDiv.innerHTML = '';
+    if (!feed.length) {
+      feedDiv.innerHTML = '<div class="feed-item"><span class="ts">—</span><span>記録がありません</span></div>';
+      return;
+    }
+    feed.forEach(function (f) {
+      var el = document.createElement('div');
+      el.className = 'feed-item';
+      var tagClass = f.type === '夜間バッチ' ? 'tag batch' : 'tag';
+      el.innerHTML = '<span class="ts">' + esc(f.ts) + '</span>' +
+        '<span class="' + tagClass + '">' + esc(f.type) + '</span>' +
+        '<span>' + esc(f.title) + '</span>';
+      el.addEventListener('click', function () {
+        openSidebar(f.title, { '日時': f.ts, '種別': f.type }, f.detail);
+      });
+      feedDiv.appendChild(el);
+    });
+  }
+
+  // ── サイドバー ─────────────────────────────────────────────────────────
+  function openSidebar(title, kv, detailText) {
+    document.getElementById('sb-title').textContent = title;
+    var html = '';
+    if (kv) {
+      html += '<dl class="kv">';
+      Object.keys(kv).forEach(function (k) {
+        if (kv[k] === '' || kv[k] == null) return;
+        html += '<dt>' + esc(k) + '</dt><dd>' + esc(kv[k]) + '</dd>';
+      });
+      html += '</dl>';
+    }
+    if (detailText) html += '<pre>' + esc(detailText) + '</pre>';
+    document.getElementById('sb-body').innerHTML = html;
+    document.body.classList.add('sb-open');
+  }
+  function closeSidebar() { document.body.classList.remove('sb-open'); }
+
+  function bindSidebar() {
+    document.getElementById('overlay').addEventListener('click', closeSidebar);
+    document.getElementById('sb-close').addEventListener('click', closeSidebar);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSidebar(); });
+  }
+
+  // ── 使い方ボタン ──────────────────────────────────────────────────────
+  function bindHelpButton() {
+    document.getElementById('help-btn').addEventListener('click', function () {
+      openSidebar('Wise 作業ダッシュボード 使い方', {
+        '【このブラウザ版の位置づけ】': 'GitHub Pages 公開版。Firestore からリアルタイムでデータを取得。スマホ・外出先から確認できる。',
+        '【操作（承認など）について】': '承認・却下・AIチャットは作業PC の open_dashboard.cmd（ローカル版）から行う。このブラウザ版は Phase 1 では閲覧専用。',
+        '【承認待ち】': 'Codex/Claude が夜間に作業を完了し、山内さんの確認が必要なタスク。ローカル版でボタン操作する。',
+        '【夜間バッチ】': 'Claude/Codex が自動実行するプログラム改修タスク。ステータスを確認できる。',
+        '【プロジェクト】': '現在進行中のプロジェクト。MEMORY の ACTIVE PROJECTS リストから自動生成。',
+        '【ウィッシュ】': 'やりたいことリスト（wishlist.md）から自動生成。',
+        '【結果バッジ】': '承認待ち=確認待ち / 実行待ち=次回実行予定 / 進行中=稼働中 / 完了=完了 / 失敗=エラー',
+        '【行クリック】': '各行をクリックすると右サイドバーに詳細が表示される。',
+        '【自動更新】': 'Firestore onSnapshot で変更があれば即座にリアルタイム更新される。',
+      }, '');
+    });
+  }
+
+  // ── 管理者モーダル（Firestore users コレクション直接操作） ────────────
+  function bindAdminModal() {
+    var modal = document.getElementById('admin-modal');
+    var resultEl = document.getElementById('admin-result');
+
+    document.getElementById('admin-btn').addEventListener('click', function () {
+      resultEl.textContent = '';
+      loadAdminUserList();
+      modal.classList.add('open');
+    });
+    document.getElementById('admin-close-btn').addEventListener('click', function () {
+      modal.classList.remove('open');
+    });
+
+    document.getElementById('admin-add-btn').addEventListener('click', function () {
+      var email = document.getElementById('admin-new-email').value.trim().toLowerCase();
+      var role  = document.getElementById('admin-role-select').value;
+      if (!email) { resultEl.textContent = 'メールアドレスを入力してください。'; return; }
+      if (!currentUserIsAdmin) { resultEl.textContent = '⚠️ 管理者権限が必要です。'; return; }
+      resultEl.textContent = '追加中…';
+      db.collection('users').doc(email).set({ email: email, role: role }, { merge: true })
+        .then(function () {
+          resultEl.textContent = '✅ ' + email + ' (' + role + ') を追加しました。';
+          document.getElementById('admin-new-email').value = '';
+          loadAdminUserList();
+        })
+        .catch(function (e) {
+          resultEl.textContent = '⚠️ 追加失敗: ' + e.message;
+        });
+    });
+  }
+
+  function loadAdminUserList() {
+    var container = document.getElementById('admin-user-list');
+    container.innerHTML = '<span class="spinner"></span> 読み込み中…';
+    db.collection('users').orderBy('email', 'asc').get()
+      .then(function (snap) {
+        container.innerHTML = '';
+        // director を常時表示（Firestore ドキュメントがなくても）
+        var directorRow = document.createElement('div');
+        directorRow.className = 'admin-user-row';
+        directorRow.innerHTML = '<span style="flex:1">' + esc(DIRECTOR_EMAIL) + '</span>' +
+          '<span class="role-badge admin">admin (固定)</span>';
+        container.appendChild(directorRow);
+
+        snap.forEach(function (doc) {
+          var data = doc.data();
+          var email = doc.id;
+          if (email === DIRECTOR_EMAIL) return; // director は上で表示済み
+          var row = document.createElement('div');
+          row.className = 'admin-user-row';
+          var roleClass = data.role === 'admin' ? 'admin' : '';
+          row.innerHTML = '<span style="flex:1">' + esc(email) + '</span>' +
+            '<span class="role-badge ' + roleClass + '">' + esc(data.role || 'viewer') + '</span>';
+          var delBtn = document.createElement('button');
+          delBtn.textContent = '削除';
+          delBtn.addEventListener('click', (function (em) {
+            return function () {
+              if (!confirm(em + ' のアクセスを削除しますか？')) return;
+              var resultEl = document.getElementById('admin-result');
+              resultEl.textContent = '削除中…';
+              db.collection('users').doc(em).delete()
+                .then(function () {
+                  resultEl.textContent = '✅ ' + em + ' を削除しました。';
+                  loadAdminUserList();
+                })
+                .catch(function (e) { resultEl.textContent = '⚠️ ' + e.message; });
+            };
+          })(email));
+          row.appendChild(delBtn);
+          container.appendChild(row);
+        });
+
+        if (snap.empty) {
+          var note = document.createElement('div');
+          note.style.color = 'var(--color-text-sub)';
+          note.style.fontSize = 'var(--text-sm)';
+          note.style.padding = '8px 0';
+          note.textContent = '追加ユーザーはいません。';
+          container.appendChild(note);
+        }
+      })
+      .catch(function (e) {
+        container.innerHTML = '<span style="color:var(--sem-err-text)">読み込みエラー: ' + esc(e.message) + '</span>';
+      });
+  }
+
+  // ── 起動 ─────────────────────────────────────────────────────────────
+  init();
+
+})();
+</script>
+</body>
+</html>
