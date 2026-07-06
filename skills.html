@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wise スキル一覧</title>
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"
+  integrity="sha384-ViccRjS0k/lvYsrtaKXk+ES61/4PAZlFI/mPHmLC1YWzK0AIbXbI5ZXDzcm3F8gH"
+  crossorigin="anonymous"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"
+  integrity="sha384-+/4lqMnmLqwbdHXshvGDmBTeWlNoPRdjXi4ZsiBj10EhQXaTBe3RF5JZktdSjug6"
+  crossorigin="anonymous"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"
+  integrity="sha384-7TetnPNdXXu6qURzIEXWCwpXedGGBJSXIR5Cv0gOWTB34UD5TxPHx33PhjA6wFQ3"
+  crossorigin="anonymous"></script>
+<!-- Firebase プロジェクト設定（公開済み識別子・秘密情報ではない） -->
+<script src="firebase-config.js"></script>
+<style>
+  :root {
+    --color-primary:    #3b82f6;
+    --color-secondary:  #6366f1;
+    --color-accent:     #06b6d4;
+    --color-bg:         #f8fafc;
+    --color-surface:    #ffffff;
+    --color-text:       #1e293b;
+    --color-text-sub:   #64748b;
+    --color-border:     #e2e8f0;
+    --font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
+    --text-xs: 0.75rem; --text-sm: 0.875rem; --text-base: 1rem;
+    --text-lg: 1.125rem; --text-xl: 1.25rem; --text-2xl: 1.5rem;
+    --leading-normal: 1.7;
+    --space-2: 8px; --space-3: 12px; --space-4: 16px;
+    --space-6: 24px; --space-8: 32px;
+    --radius-sm: 6px; --radius-md: 10px; --radius-full: 9999px;
+    --sem-ok-text: #15803d;   --sem-ok-bg: #dcfce7;
+    --sem-info-text: #1d4ed8; --sem-info-bg: #dbeafe;
+    --sem-batch-text: #6d28d9; --sem-batch-bg: #ede9fe;
+    --sem-accent-text: #0e7490; --sem-accent-bg: #cffafe;
+    --sem-wish-text: #475569; --sem-wish-bg: #e2e8f0;
+    --sem-warn-text: #b45309; --sem-warn-bg: #fef3c7;
+    --sem-err-text: #b91c1c; --sem-err-bg: #fee2e2;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--color-bg); color: var(--color-text); font-family: var(--font-family); font-size: var(--text-lg); line-height: var(--leading-normal); }
+  header {
+    background: var(--color-secondary); color: #fff; padding: var(--space-4) var(--space-6);
+    display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap;
+    position: sticky; top: 0; z-index: 200;
+  }
+  header h1 { font-size: var(--text-2xl); margin: 0; font-weight: 700; }
+  header .meta { color: rgba(255,255,255,.85); font-size: var(--text-sm); }
+  header .nav-link {
+    color: rgba(255,255,255,.85); text-decoration: none; font-size: var(--text-sm);
+    padding: 4px 14px; border-radius: var(--radius-full);
+    background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.3);
+  }
+  header .nav-link:hover { background: rgba(255,255,255,.28); color: #fff; }
+  header .nav-link:first-of-type { margin-left: auto; }
+  .header-right { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+  #logout-btn {
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.3);
+    color: rgba(255,255,255,.8); padding: 4px 14px; border-radius: var(--radius-full);
+    font-size: var(--text-sm); cursor: pointer;
+  }
+  #logout-btn:hover { background: rgba(255,255,255,.2); }
+
+  main { max-width: 1280px; margin: 0 auto; padding: var(--space-6) var(--space-6) 80px; }
+  h2 { font-size: var(--text-xl); margin: var(--space-8) 0 var(--space-3); }
+  h2 .count { color: var(--color-text-sub); font-weight: normal; font-size: var(--text-base); }
+
+  .chips { display: flex; gap: var(--space-2); margin-bottom: var(--space-4); flex-wrap: wrap; align-items: center; }
+  .chip { border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-sub); font-size: var(--text-sm); padding: 6px 16px; border-radius: var(--radius-full); cursor: pointer; font-family: var(--font-family); transition: all 0.2s; }
+  .chip:hover { border-color: var(--color-secondary); color: var(--color-secondary); }
+  .chip.on { background: var(--color-secondary); border-color: var(--color-secondary); color: #fff; font-weight: 700; }
+  #search { margin-left: auto; padding: 6px 14px; border: 1px solid var(--color-border); border-radius: var(--radius-full); font-size: var(--text-sm); font-family: var(--font-family); color: var(--color-text); background: var(--color-surface); outline: none; min-width: 200px; }
+  #search:focus { border-color: var(--color-secondary); box-shadow: 0 0 0 3px rgba(99,102,241,.2); }
+
+  table { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+  th, td { text-align: left; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); }
+  th { background: var(--color-secondary); color: #fff; font-size: var(--text-sm); font-weight: 600; white-space: nowrap; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: var(--color-bg); }
+  tbody tr:last-child td { border-bottom: none; }
+  td { font-size: var(--text-base); }
+  td.skill-name { font-weight: 700; font-family: Consolas, monospace; font-size: var(--text-sm); white-space: nowrap; }
+  td.desc-cell { font-size: var(--text-sm); color: var(--color-text-sub); max-width: 340px; }
+  td.triggers-cell { font-size: var(--text-xs); color: var(--color-text-sub); max-width: 240px; }
+
+  .cattag { display: inline-block; font-size: var(--text-xs); padding: 2px 10px; border-radius: var(--radius-full); white-space: nowrap; }
+  .cattag.routine { background: var(--sem-ok-bg); color: var(--sem-ok-text); }
+  .cattag.recruit { background: var(--sem-info-bg); color: var(--sem-info-text); }
+  .cattag.deploy  { background: var(--sem-batch-bg); color: var(--sem-batch-text); }
+  .cattag.quality { background: var(--sem-warn-bg); color: var(--sem-warn-text); }
+  .cattag.other   { background: var(--sem-wish-bg); color: var(--sem-wish-text); }
+
+  .inv-badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: var(--radius-full); font-weight: 700; white-space: nowrap; }
+  .inv-true  { background: var(--sem-ok-bg); color: var(--sem-ok-text); }
+  .inv-false { background: var(--sem-wish-bg); color: var(--sem-wish-text); }
+
+  .model-badge { display: inline-block; font-size: 11px; padding: 2px 10px; border-radius: var(--radius-full); font-weight: 700; white-space: nowrap; }
+  .model-haiku   { background: #dcfce7; color: #15803d; }
+  .model-sonnet  { background: #dbeafe; color: #1d4ed8; }
+  .model-opus    { background: #ede9fe; color: #6d28d9; }
+  .model-fable   { background: #e0e7ff; color: #4338ca; }
+  .model-session { background: #f1f5f9; color: #94a3b8; }
+
+  .trigger-pill { display: inline-block; background: #f1f5f9; color: #475569; font-size: 11px; padding: 1px 7px; border-radius: var(--radius-full); margin: 1px 2px 1px 0; white-space: nowrap; }
+
+  /* サイドバー */
+  #overlay { position: fixed; inset: 0; background: rgba(30,41,59,.35); opacity: 0; pointer-events: none; transition: opacity .2s; }
+  #sidebar { position: fixed; top: 0; right: 0; height: 100%; width: min(660px,94vw); background: var(--color-surface); box-shadow: -6px 0 24px rgba(0,0,0,.18); transform: translateX(105%); transition: transform .25s ease-out; display: flex; flex-direction: column; }
+  body.sb-open #overlay { opacity: 1; pointer-events: auto; }
+  body.sb-open #sidebar { transform: translateX(0); }
+  #sb-head { background: var(--color-secondary); color: #fff; padding: var(--space-4); display: flex; gap: var(--space-2); align-items: flex-start; }
+  #sb-head h3 { margin: 0; font-size: var(--text-lg); flex: 1; line-height: 1.5; font-family: Consolas, monospace; }
+  #sb-close { background: none; border: none; color: rgba(255,255,255,.8); font-size: var(--text-2xl); cursor: pointer; padding: 0 4px; }
+  #sb-close:hover { color: #fff; }
+  #sb-body { padding: var(--space-4) var(--space-6); overflow-y: auto; flex: 1; }
+  .kv { display: grid; grid-template-columns: 130px 1fr; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-4); }
+  .kv dt { color: var(--color-text-sub); font-size: var(--text-sm); padding-top: 2px; }
+  .kv dd { margin: 0; word-break: break-word; font-size: var(--text-base); }
+  #sb-body pre { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: var(--space-4); font-size: var(--text-sm); white-space: pre-wrap; word-break: break-word; font-family: var(--font-family); line-height: 1.7; }
+  #empty-note { color: var(--color-text-sub); padding: var(--space-6); text-align: center; display: none; }
+
+  /* 認証オーバーレイ */
+  #auth-overlay {
+    position: fixed; inset: 0; background: var(--color-bg);
+    display: flex; align-items: center; justify-content: center; z-index: 9999;
+  }
+  #auth-card {
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    border-radius: 16px; padding: 40px; text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,.12); max-width: 380px; width: 90%;
+  }
+  #auth-card .logo { font-size: 2.5rem; margin-bottom: 12px; }
+  #auth-card h2 { margin: 0 0 8px; font-size: var(--text-xl); }
+  #auth-card p { color: var(--color-text-sub); font-size: var(--text-sm); margin: 0 0 24px; }
+  #login-btn {
+    background: var(--color-secondary); color: #fff; border: none; border-radius: var(--radius-sm);
+    padding: 12px 28px; font-size: var(--text-base); font-weight: 700; cursor: pointer;
+    font-family: var(--font-family); width: 100%;
+  }
+  #login-btn:hover { filter: brightness(0.9); }
+  #login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  #auth-status { margin-top: 16px; font-size: var(--text-sm); color: var(--color-text-sub); }
+
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid #cbd5e1; border-top-color: var(--color-secondary); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- 認証オーバーレイ -->
+<div id="auth-overlay">
+  <div id="auth-card">
+    <div class="logo">⚡</div>
+    <h2>Wise スキル一覧</h2>
+    <p>社内向けシステムです。Googleアカウントでログインしてください。</p>
+    <button id="login-btn">🔐 Googleでログイン</button>
+    <div id="auth-status"></div>
+  </div>
+</div>
+
+<header>
+  <h1>⚡ Wise スキル一覧</h1>
+  <span class="meta" id="skill-count-meta"></span>
+  <div class="header-right">
+    <a href="tools.html" class="nav-link">ツール一覧</a>
+    <a href="index.html" class="nav-link">← ダッシュボード</a>
+    <button id="logout-btn" style="display:none;">ログアウト</button>
+  </div>
+</header>
+<main>
+  <h2>全スキル <span class="count" id="count-label"></span></h2>
+  <div class="chips">
+    <button class="chip on" data-cat="すべて">すべて</button>
+    <button class="chip" data-cat="ルーティン">ルーティン</button>
+    <button class="chip" data-cat="採用">採用</button>
+    <button class="chip" data-cat="開発・デプロイ">開発・デプロイ</button>
+    <button class="chip" data-cat="品質・ガバナンス">品質・ガバナンス</button>
+    <button class="chip" data-cat="ユーザー呼出可">ユーザー呼出可</button>
+    <button class="chip" data-cat="モデル固定あり">モデル固定あり</button>
+    <input id="search" type="search" placeholder="キーワード検索…">
+  </div>
+  <table>
+    <thead>
+      <tr><th>スキル名</th><th>カテゴリ</th><th>概要</th><th>トリガーキーワード</th><th>モデル</th><th>呼出</th></tr>
+    </thead>
+    <tbody id="skill-tbody"></tbody>
+  </table>
+  <div id="empty-note">該当するスキルはありません</div>
+</main>
+
+<div id="overlay"></div>
+<aside id="sidebar">
+  <div id="sb-head"><h3 id="sb-title"></h3><button id="sb-close">✕</button></div>
+  <div id="sb-body"></div>
+</aside>
+
+<script>
+(function () {
+  'use strict';
+  var DIRECTOR_EMAIL = 'director@wise-jmco.com';
+  var auth, db;
+  var allSkills = [];
+  var currentCat = 'すべて', currentSearch = '';
+
+  function init() {
+    var config = window.FIREBASE_CONFIG;
+    if (!config || !config.apiKey) {
+      document.querySelector('main').innerHTML = '<p style="color:red">Firebase設定が読み込めませんでした。</p>';
+      return;
+    }
+    firebase.initializeApp(config);
+    auth = firebase.auth();
+    db   = firebase.firestore();
+
+    document.getElementById('login-btn').addEventListener('click', function () {
+      var btn = document.getElementById('login-btn');
+      var statusEl = document.getElementById('auth-status');
+      btn.disabled = true;
+      statusEl.textContent = 'ログイン中…';
+      var provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(function (e) {
+        statusEl.textContent = 'ログイン失敗: ' + e.message;
+        btn.disabled = false;
+      });
+    });
+
+    document.getElementById('logout-btn').addEventListener('click', function () {
+      auth.signOut();
+    });
+
+    auth.onAuthStateChanged(function (user) {
+      if (!user) {
+        document.getElementById('auth-overlay').style.display = 'flex';
+        document.getElementById('logout-btn').style.display = 'none';
+        return;
+      }
+      checkAccess(user.email || '');
+    });
+  }
+
+  function checkAccess(email) {
+    var statusEl = document.getElementById('auth-status');
+    email = email.toLowerCase();
+    if (email === DIRECTOR_EMAIL) {
+      grantAccess(email);
+      return;
+    }
+    db.collection('users').doc(email).get().then(function (snap) {
+      if (snap.exists) {
+        var role = snap.data().role;
+        if (role === 'admin' || role === 'viewer') {
+          grantAccess(email);
+          return;
+        }
+      }
+      statusEl.textContent = email + ' はアクセス権限がありません。管理者に連絡してください。';
+      auth.signOut();
+    }).catch(function (e) {
+      statusEl.textContent = 'アクセス確認エラー: ' + e.message;
+      auth.signOut();
+    });
+  }
+
+  function grantAccess(email) {
+    document.getElementById('auth-overlay').style.display = 'none';
+    document.getElementById('logout-btn').style.display = '';
+    document.getElementById('logout-btn').title = email;
+    loadSkills();
+  }
+
+  function loadSkills() {
+    var tbody = document.getElementById('skill-tbody');
+    tbody.innerHTML = '<tr><td colspan="6"><span class="spinner"></span> 読み込み中…</td></tr>';
+    db.collection('catalogs').doc('skills').get()
+      .then(function (snap) {
+        if (!snap.exists || !snap.data().skills) {
+          tbody.innerHTML = '<tr><td colspan="6" style="color:var(--sem-err-text)">スキルデータがありません。ローカルで push_to_firestore.mjs を実行してください。</td></tr>';
+          return;
+        }
+        allSkills = snap.data().skills;
+        var updatedAt = snap.data().updatedAt;
+        var metaText = '全' + allSkills.length + 'スキル';
+        if (updatedAt && updatedAt.toDate) {
+          var dt = updatedAt.toDate();
+          metaText += '（更新: ' + (dt.getMonth()+1) + '/' + dt.getDate() + ' ' +
+            String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0') + '）';
+        }
+        document.getElementById('skill-count-meta').textContent = metaText;
+        renderTable();
+      })
+      .catch(function (e) {
+        tbody.innerHTML = '<tr><td colspan="6" style="color:var(--sem-err-text)">読み込みエラー: ' + esc(e.message) + '</td></tr>';
+      });
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
+    });
+  }
+
+  var CAT_CLS = { 'ルーティン': 'routine', '採用': 'recruit', '開発・デプロイ': 'deploy', '品質・ガバナンス': 'quality' };
+  var MODEL_LABEL = { haiku: 'Haiku固定', sonnet: 'Sonnet固定', opus: 'Opus固定', fable: 'Fable固定' };
+
+  function modelBadge(model) {
+    if (!model) return '<span class="model-badge model-session">セッション</span>';
+    return '<span class="model-badge model-' + esc(model) + '">' + esc(MODEL_LABEL[model] || model) + '</span>';
+  }
+
+  function filtered() {
+    return allSkills.filter(function (s) {
+      if (currentCat === 'ユーザー呼出可') { if (!s.userInvocable) return false; }
+      else if (currentCat === 'モデル固定あり') { if (!s.model) return false; }
+      else if (currentCat !== 'すべて' && s.cat !== currentCat) return false;
+      if (currentSearch) {
+        var q = currentSearch.toLowerCase();
+        return (s.name + s.shortDesc + s.fullDesc + s.cat + (s.triggers || []).join(' ') + (s.model || '')).toLowerCase().indexOf(q) >= 0;
+      }
+      return true;
+    });
+  }
+
+  function renderTable() {
+    var list = filtered();
+    document.getElementById('count-label').textContent = '（' + list.length + '件）';
+    document.getElementById('empty-note').style.display = list.length ? 'none' : 'block';
+    var tbody = document.getElementById('skill-tbody');
+    tbody.innerHTML = '';
+    list.forEach(function (s) {
+      var tr = document.createElement('tr');
+      var catCls = CAT_CLS[s.cat] || 'other';
+      var triggers = (s.triggers || []).map(function (t) {
+        return '<span class="trigger-pill">/' + esc(t) + '</span>';
+      }).join('');
+      tr.innerHTML =
+        '<td class="skill-name">' + esc(s.name) + '</td>' +
+        '<td><span class="cattag ' + catCls + '">' + esc(s.cat) + '</span></td>' +
+        '<td class="desc-cell">' + esc(s.shortDesc) + '</td>' +
+        '<td class="triggers-cell">' + (triggers || '<span style="color:#cbd5e1">—</span>') + '</td>' +
+        '<td>' + modelBadge(s.model) + '</td>' +
+        '<td><span class="inv-badge inv-' + s.userInvocable + '">' + (s.userInvocable ? '呼出可' : '自動') + '</span></td>';
+      tr.addEventListener('click', (function (skill) { return function () { openSidebar(skill); }; })(s));
+      tbody.appendChild(tr);
+    });
+  }
+
+  // フィルタチップ
+  document.querySelector('.chips').querySelectorAll('.chip').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      currentCat = btn.dataset.cat;
+      document.querySelectorAll('.chip').forEach(function (b) { b.classList.remove('on'); });
+      btn.classList.add('on');
+      renderTable();
+    });
+  });
+  document.getElementById('search').addEventListener('input', function (e) {
+    currentSearch = e.target.value.trim();
+    renderTable();
+  });
+
+  // サイドバー
+  function openSidebar(s) {
+    document.getElementById('sb-title').textContent = '/' + s.name;
+    var catCls = CAT_CLS[s.cat] || 'other';
+    var triggers = (s.triggers || []).map(function (t) { return '「' + t + '」'; }).join(' ');
+    var modelLabel = s.model ? (MODEL_LABEL[s.model] || s.model) + '（model: ' + s.model + ' 固定）' : 'セッションモデル（固定なし）';
+    var html = '<dl class="kv">' +
+      kv('カテゴリ', s.cat) +
+      kv('呼出方法', s.userInvocable ? 'ユーザー呼出可（/スキル名）' : '自動発動のみ（内部スキル）') +
+      kv('実行モデル', modelLabel) +
+      kv('トリガー', triggers || '—') +
+      '</dl>';
+    if (s.fullDesc) html += '<pre>' + esc(s.fullDesc) + '</pre>';
+    document.getElementById('sb-body').innerHTML = html;
+    document.body.classList.add('sb-open');
+  }
+
+  function kv(k, v) {
+    return v ? '<dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd>' : '';
+  }
+
+  function close() { document.body.classList.remove('sb-open'); }
+  document.getElementById('overlay').addEventListener('click', close);
+  document.getElementById('sb-close').addEventListener('click', close);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+
+  init();
+})();
+</script>
+</body>
+</html>
