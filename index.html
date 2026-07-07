@@ -620,7 +620,56 @@
         el.appendChild(diffDiv);
       }
 
-      if (currentUserIsAdmin && !a.no_buttons) {
+      if (currentUserIsAdmin && a.dismissible) {
+        // 判断待ち自動復旧カード: 「✅ 確認済み（消す）」ボタン（git pushではなく消し込み）
+        var dRow = document.createElement('div');
+        dRow.className = 'ap-btn-row';
+        var dBtn = document.createElement('button');
+        dBtn.className = 'ap-btn approve';
+        dBtn.textContent = '✅ 確認済み（消す）';
+        dRow.appendChild(dBtn);
+        el.appendChild(dRow);
+        var dResult = document.createElement('div');
+        dResult.className = 'ap-btn-result';
+        dResult.style.display = 'none';
+        el.appendChild(dResult);
+        (function (btn, resDiv, sessionKey) {
+          btn.addEventListener('click', function (ev) {
+            ev.stopPropagation();
+            if (!confirm('この判断待ち通知を確認済みにして消しますか？')) return;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> 処理中…';
+            var docRef = db.collection('approval_requests').doc();
+            var docId = docRef.id;
+            docRef.set({
+              type: 'dismiss_recovery',
+              session_key: sessionKey,
+              task_id: null,
+              status: 'pending',
+              requestedBy: currentUserEmail,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            }).then(function () {
+              var unsub = db.collection('approval_requests').doc(docId).onSnapshot(function (snap) {
+                if (!snap.exists) return;
+                var st = snap.data().status;
+                if (st === 'done' || st === 'failed') {
+                  unsub();
+                  if (st === 'done') { el.style.display = 'none'; }
+                  else {
+                    btn.disabled = false; btn.textContent = '✅ 確認済み（消す）';
+                    resDiv.style.display = ''; resDiv.className = 'ap-btn-result err';
+                    resDiv.textContent = snap.data().result || '失敗';
+                  }
+                }
+              });
+            }).catch(function (e) {
+              btn.disabled = false; btn.textContent = '✅ 確認済み（消す）';
+              resDiv.style.display = ''; resDiv.className = 'ap-btn-result err';
+              resDiv.textContent = '送信失敗: ' + e.message;
+            });
+          });
+        })(dBtn, dResult, a.session_key);
+      } else if (currentUserIsAdmin && !a.no_buttons) {
         // 承認/却下ボタン（no_buttons=true の自動復旧カード等では表示しない）
         var btnRow = document.createElement('div');
         btnRow.className = 'ap-btn-row';
