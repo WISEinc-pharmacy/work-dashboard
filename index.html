@@ -146,6 +146,18 @@
   .typetag.wl       { background: var(--sem-accent-bg); color: var(--sem-accent-text); }
   .typetag.reaction { background: #fce7f3; color: #9d174d; }
   td.mono, .mono { font-family: Consolas, monospace; font-size: var(--text-sm); }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-md); }
+  td.taskid { max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  @media (max-width: 640px) {
+    main { padding: var(--space-4) var(--space-3) 80px; }
+    header h1 { font-size: var(--text-xl); }
+    .table-wrap table { min-width: 560px; }
+    th, td { padding: 8px 10px; }
+    td { font-size: var(--text-sm); }
+    td.taskid { max-width: 96px; font-size: var(--text-xs); }
+    td.summary { max-width: 150px; }
+    .badge, .typetag { padding: 2px 8px; font-size: var(--text-xs); }
+  }
 
   /* フィード */
   .feed { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
