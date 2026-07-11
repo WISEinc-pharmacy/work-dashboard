@@ -245,6 +245,11 @@
   .ap-btn-result { font-size: var(--text-sm); margin-top: 6px; padding: 6px 10px; border-radius: var(--radius-sm); }
   .ap-btn-result.ok  { background: var(--sem-ok-bg); color: var(--sem-ok-text); }
   .ap-btn-result.err { background: var(--sem-err-bg); color: var(--sem-err-text); }
+  .ap-btn.done { background: #15803d !important; color: #fff !important; opacity: 1 !important; cursor: default; }
+  .approval.approval-done { opacity: 0.65; }
+  .reload-hint { position: fixed; left: 0; right: 0; bottom: 0; z-index: 600; background: #15803d; color: #fff; padding: 10px 16px; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; font-size: var(--text-sm); box-shadow: 0 -2px 10px rgba(0,0,0,0.2); }
+  .reload-hint-btn { background: #fff; color: #15803d; border: none; border-radius: var(--radius-sm); padding: 7px 16px; font-weight: 700; cursor: pointer; }
+  .reload-hint-btn:hover { filter: brightness(0.95); }
 
   /* AIチャット（サイドバー内） */
   #chat-section { margin-top: var(--space-4); border-top: 1px solid var(--color-border); padding-top: var(--space-4); }
@@ -407,6 +412,11 @@
   var chatMessages = []; // チャット会話履歴
   // 承認カードのステータス追跡（docId → unsubscribe関数）
   var approvalUnsubMap = {};
+  // アクション送信済み・結果待ちのカードキー集合。1件でもある間は renderApprovals を
+  // 破壊的に走らせない（スマホ連続承認でカードがタップ最中に差し替わり click が発火しない問題への対処）
+  var approvalsInFlight = {};
+  // 完了済みだがまだリロードしていない項目がある間は破壊的再描画を止める（完了表示を保持）
+  var completedPendingReload = false;
 
   // ── 初期化 ────────────────────────────────────────────────────────────
   function init() {
@@ -564,8 +574,30 @@
     renderFeed(D.feed || []);
   }
 
+  // 完了項目のリロード案内バー（一度だけ表示・リロードで消える）
+  function showReloadHint() {
+    if (document.getElementById('reload-hint')) return;
+    var bar = document.createElement('div');
+    bar.id = 'reload-hint';
+    bar.className = 'reload-hint';
+    var msg = document.createElement('span');
+    msg.textContent = '✅ 完了した項目があります。リロードすると完了分が消えます。';
+    var btn = document.createElement('button');
+    btn.className = 'reload-hint-btn';
+    btn.textContent = '🔄 更新して消す';
+    btn.addEventListener('click', function () { location.reload(); });
+    bar.appendChild(msg);
+    bar.appendChild(btn);
+    document.body.appendChild(bar);
+  }
+
   // ── 承認待ち（Phase 2: adminは承認/却下ボタン + AIチャット） ──────────
   function renderApprovals(approvals) {
+    // 最新の承認データを保持（進行中が空になったとき最終リコンサイルに使う）
+    window.__lastApprovals = approvals;
+    // 進行中アクションがある間は破壊的再描画をしない（押下中カードのDOM差し替え防止）
+    if (Object.keys(approvalsInFlight).length > 0 || completedPendingReload) return;
+
     // 古いonSnapshot解除（承認カード）
     Object.values(approvalUnsubMap).forEach(function (fn) { try { fn(); } catch { /* ignore */ } });
     approvalUnsubMap = {};
@@ -633,11 +665,12 @@
         dResult.className = 'ap-btn-result';
         dResult.style.display = 'none';
         el.appendChild(dResult);
-        (function (btn, resDiv, sessionKey) {
+        (function (btn, resDiv, sessionKey, cardKey) {
           btn.addEventListener('click', function (ev) {
             ev.stopPropagation();
             if (!confirm('この判断待ち通知を確認済みにして消しますか？')) return;
             btn.disabled = true;
+            approvalsInFlight[cardKey] = true;
             btn.innerHTML = '<span class="spinner"></span> 処理中…';
             var docRef = db.collection('approval_requests').doc();
             var docId = docRef.id;
@@ -654,21 +687,29 @@
                 var st = snap.data().status;
                 if (st === 'done' || st === 'failed') {
                   unsub();
+                  delete approvalsInFlight[cardKey];
                   if (st === 'done') { el.style.display = 'none'; }
                   else {
                     btn.disabled = false; btn.textContent = '✅ 確認済み（消す）';
                     resDiv.style.display = ''; resDiv.className = 'ap-btn-result err';
                     resDiv.textContent = snap.data().result || '失敗';
                   }
+                  if (Object.keys(approvalsInFlight).length === 0 && window.__lastApprovals) {
+                    renderApprovals(window.__lastApprovals);
+                  }
                 }
               });
             }).catch(function (e) {
+              delete approvalsInFlight[cardKey];
               btn.disabled = false; btn.textContent = '✅ 確認済み（消す）';
               resDiv.style.display = ''; resDiv.className = 'ap-btn-result err';
               resDiv.textContent = '送信失敗: ' + e.message;
+              if (Object.keys(approvalsInFlight).length === 0 && window.__lastApprovals) {
+                renderApprovals(window.__lastApprovals);
+              }
             });
           });
-        })(dBtn, dResult, a.session_key);
+        })(dBtn, dResult, a.session_key, a.id);
       } else if (currentUserIsAdmin && !a.no_buttons) {
         // 承認/却下ボタン（no_buttons=true の自動復旧カード等では表示しない）
         var btnRow = document.createElement('div');
@@ -688,12 +729,12 @@
         resultDiv.style.display = 'none';
         el.appendChild(resultDiv);
 
-        (function (apvBtn, rejBtn, resDiv, taskId, reviewId) {
+        (function (apvBtn, rejBtn, resDiv, taskId, reviewId, cardKey) {
           function setLoading(yes) {
             apvBtn.disabled = yes;
             rejBtn.disabled = yes;
             if (yes) {
-              apvBtn.innerHTML = '<span class="spinner"></span> 処理中…';
+              apvBtn.innerHTML = '<span class="spinner"></span> 受付・処理中…';
               rejBtn.disabled = true;
             } else {
               apvBtn.textContent = '✅ 採用';
@@ -702,6 +743,7 @@
 
           function submitAction(type) {
             setLoading(true);
+            approvalsInFlight[cardKey] = true;
             var docRef = db.collection('approval_requests').doc();
             var docId = docRef.id;
             docRef.set({
@@ -723,18 +765,29 @@
                 if (d.status === 'done' || d.status === 'failed') {
                   unsub();
                   delete approvalUnsubMap[docId];
-                  setLoading(false);
+                  delete approvalsInFlight[cardKey];
                   resDiv.style.display = '';
                   resDiv.className = 'ap-btn-result ' + (d.status === 'done' ? 'ok' : 'err');
                   resDiv.textContent = d.result || (d.status === 'done' ? '完了' : '失敗');
                   if (d.status === 'done') {
-                    apvBtn.style.display = 'none';
+                    // 完了表示のまま残す（リロードするまで消えない）。他カードの操作は継続可能
+                    apvBtn.disabled = true;
+                    apvBtn.innerHTML = '✅ 完了';
+                    apvBtn.classList.add('done');
                     rejBtn.style.display = 'none';
+                    el.classList.add('approval-done');
+                    completedPendingReload = true;
+                    showReloadHint();
+                  } else {
+                    // 失敗時は再試行できるようボタンを戻す
+                    setLoading(false);
                   }
+                  // 破壊的な自動再描画はしない（完了カードを保持し、進行中の他操作も守る）
                 }
               });
               approvalUnsubMap[docId] = unsub;
             }).catch(function (e) {
+              delete approvalsInFlight[cardKey];
               setLoading(false);
               resDiv.style.display = '';
               resDiv.className = 'ap-btn-result err';
@@ -752,7 +805,7 @@
             if (!confirm('「' + taskId + '」を取り消し（git reset）しますか？')) return;
             submitAction('reject');
           });
-        })(approveBtn, rejectBtn, resultDiv, a.task_id || a.id, a.review_id);
+        })(approveBtn, rejectBtn, resultDiv, a.task_id || a.id, a.review_id, a.id);
       } else {
         // viewer: 操作誘導注記
         var noteDiv = document.createElement('div');
