@@ -114,9 +114,16 @@
   .chip.on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; font-weight: 700; }
 
   /* テーブル */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   table { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
   th, td { text-align: left; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); }
   th { background: var(--color-primary); color: #fff; font-size: var(--text-sm); font-weight: 600; white-space: nowrap; }
+  td.task-id { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 640px) {
+    td { font-size: var(--text-sm); padding: var(--space-2) var(--space-3); }
+    td.task-id { max-width: 80px; }
+    td.summary { max-width: 140px; }
+  }
   tbody tr { cursor: pointer; }
   tbody tr:hover { background: var(--color-bg); }
   tbody tr:last-child td { border-bottom: none; }
@@ -366,10 +373,12 @@
   <section>
     <h2>🗂 タスク一覧 <span class="count" id="tasks-count"></span></h2>
     <div class="chips" id="chips"></div>
+    <div class="table-wrap">
     <table>
       <thead><tr><th>作業ID</th><th>種別</th><th>タイトル</th><th>概要</th><th>結果</th><th>最終作業日</th></tr></thead>
       <tbody id="tasks"></tbody>
     </table>
+    </div>
   </section>
 
   <section>
@@ -876,7 +885,7 @@
     shown.forEach(function (t) {
       var tr = document.createElement('tr');
       var badgeClass = statusOrder.hasOwnProperty(t.status) ? t.status : 'unknown';
-      tr.innerHTML = '<td class="mono">' + esc(t.id) + '</td>' +
+      tr.innerHTML = '<td class="mono task-id" title="' + esc(t.id) + '">' + esc(t.id) + '</td>' +
         '<td><span class="typetag ' + esc(TYPE_CLASSES[t.type] || '') + '">' + esc(t.type) + '</span></td>' +
         '<td title="' + esc(t.title) + '">' + esc(t.shortTitle || t.title) + '</td>' +
         '<td class="summary">' + esc(((t.detail && t.detail['概要']) || '').slice(0, 100)) + '</td>' +
