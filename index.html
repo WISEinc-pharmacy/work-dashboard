@@ -16,47 +16,8 @@
   crossorigin="anonymous"></script>
 <!-- Firebase プロジェクト設定（公開済み識別子・秘密情報ではない） -->
 <script src="firebase-config.js"></script>
+<link rel="stylesheet" href="assets/design_tokens.css">
 <style>
-  /* WISE Group Design System（design_system.md デフォルト仕様準拠） */
-  :root {
-    --color-primary:    #3b82f6;
-    --color-secondary:  #6366f1;
-    --color-accent:     #06b6d4;
-    --color-bg:         #f8fafc;
-    --color-surface:    #ffffff;
-    --color-text:       #1e293b;
-    --color-text-sub:   #64748b;
-    --color-border:     #e2e8f0;
-
-    --font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', sans-serif;
-    --text-xs:    0.75rem;
-    --text-sm:    0.875rem;
-    --text-base:  1rem;
-    --text-lg:    1.125rem;
-    --text-xl:    1.25rem;
-    --text-2xl:   1.5rem;
-    --leading-normal: 1.7;
-
-    --space-2:   8px;
-    --space-3:  12px;
-    --space-4:  16px;
-    --space-6:  24px;
-    --space-8:  32px;
-
-    --radius-sm:   6px;
-    --radius-md:  10px;
-    --radius-lg:  16px;
-    --radius-full: 9999px;
-
-    --sem-warn-text: #b45309; --sem-warn-bg: #fef3c7; --sem-warn-border: #f0d48a;
-    --sem-ok-text: #15803d;   --sem-ok-bg: #dcfce7;
-    --sem-err-text: #b91c1c;  --sem-err-bg: #fee2e2;
-    --sem-info-text: #1d4ed8; --sem-info-bg: #dbeafe;
-    --sem-batch-text: #6d28d9; --sem-batch-bg: #ede9fe;
-    --sem-accent-text: #0e7490; --sem-accent-bg: #cffafe;
-    --sem-wish-text: #475569; --sem-wish-bg: #e2e8f0;
-  }
-  * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--color-bg); color: var(--color-text);
     font-family: var(--font-family);
