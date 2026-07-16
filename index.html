@@ -316,6 +316,7 @@
   .health-today-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
   .health-today-item { display: flex; align-items: baseline; gap: 8px; font-size: var(--text-sm); line-height: 1.5; flex-wrap: wrap; }
   .health-today-item .hti-rank { color: var(--color-text-sub); font-size: var(--text-xs); flex: none; min-width: 1.4em; }
+  .health-today-item .hti-owner { flex: none; font-size: var(--text-sm); }
   .health-today-item .hti-title { font-weight: 700; color: var(--color-text); }
   .health-today-item .hti-detail { color: var(--color-text-sub); }
   .health-today-item .hti-source {
@@ -334,6 +335,21 @@
   .health-chip .hc-dot.yellow { background: #d97706; }
   .health-chip .hc-dot.red    { background: #dc2626; }
   .health-chip .hc-dot.gray   { background: #94a3b8; }
+  /* v1.1: check単位5値状態（pass/warn/fail/unknown/stale）のチップ表現。
+     pass/warn/failは既存green/yellow/redと同一見た目（表示ロジック維持）。
+     unknown/staleのみ区別できる簡易表現を追加（unknown=グレー破線・stale=時計アイコン）。 */
+  .health-chip .hc-dot.pass    { background: #16a34a; }
+  .health-chip .hc-dot.warn    { background: #d97706; }
+  .health-chip .hc-dot.fail    { background: #dc2626; }
+  .health-chip .hc-dot.unknown { background: transparent; border: 1px dashed #94a3b8; }
+  .health-chip .hc-dot.stale   {
+    width: auto; height: auto; border-radius: 0; background: none; border: none;
+    font-size: 9px; line-height: 1;
+  }
+  .health-legend {
+    padding: 0 var(--space-6) var(--space-4); margin-top: -8px;
+    font-size: var(--text-xs); color: var(--color-text-sub);
+  }
 
   .health-detail { border-top: 1px solid var(--color-border); padding: var(--space-4) var(--space-6); }
   .health-detail-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -346,7 +362,7 @@
     .health-headline { font-size: var(--text-lg); }
     .health-dot { font-size: 1.5rem; }
     .health-side { width: 100%; justify-content: space-between; }
-    .health-today, .health-chips { padding-left: var(--space-4); padding-right: var(--space-4); }
+    .health-today, .health-chips, .health-legend { padding-left: var(--space-4); padding-right: var(--space-4); }
     .health-stale-banner, .health-note-banner { margin-left: var(--space-4); margin-right: var(--space-4); }
     .health-detail { padding: var(--space-3) var(--space-4); }
   }
@@ -417,6 +433,7 @@
       <ul class="health-today-list" id="health-today-list"></ul>
     </div>
     <div class="health-chips" id="health-chips"></div>
+    <div class="health-legend" id="health-legend">凡例: 🟢 pass(正常) 🟡 warn(注意) 🔴 fail(要対応) ⬜(破線) unknown(未取得/未設定) ⏱ stale(鮮度切れ)</div>
     <div class="health-detail" id="health-detail" style="display:none;">
       <div class="health-detail-table-wrap">
         <table>
@@ -1435,8 +1452,12 @@
     var listEl = document.getElementById('health-today-list');
     if (today.length) {
       listEl.innerHTML = today.map(function (t, i) {
+        // owner: "ai"|"human"（表示専用バッジ。未付与の旧データはhuman扱いにフォールバック＝安全側）
+        var ownerBadge = t.owner === 'ai' ? '🤖' : '👤';
+        var ownerLabel = t.owner === 'ai' ? 'AI自律可能（表示のみ・自動実行はしません）' : '人間の判断が必要';
         return '<li class="health-today-item">' +
           '<span class="hti-rank">' + (i + 1) + '.</span>' +
+          '<span class="hti-owner" title="' + esc(ownerLabel) + '" aria-label="' + esc(ownerLabel) + '">' + ownerBadge + '</span>' +
           '<span class="hti-title">' + esc(t.title || '') + '</span>' +
           (t.detail ? '<span class="hti-detail">' + esc(t.detail) + '</span>' : '') +
           (t.source ? '<span class="hti-source">' + esc(t.source) + '</span>' : '') +
@@ -1449,11 +1470,24 @@
     }
 
     // checksチップ行 + クリックで開く詳細テーブル
+    // state(5値: pass/warn/fail/unknown/stale)を優先し、未付与の旧データはstatusから同一規則で
+    // クライアント側フォールバック変換する（サーバ側deriveState()と対応表は同一：
+    // green→pass / yellow→warn / red→fail / gray→unknown）。
+    function chipStateOf(c) {
+      if (['pass', 'warn', 'fail', 'unknown', 'stale'].indexOf(c.state) >= 0) return c.state;
+      if (c.status === 'green') return 'pass';
+      if (c.status === 'yellow') return 'warn';
+      if (c.status === 'red') return 'fail';
+      return 'unknown';
+    }
+    var CHIP_STATE_LABEL = { pass: '正常', warn: '注意', fail: '要対応', unknown: '未取得/未設定', stale: '鮮度切れ' };
     var checks = Array.isArray(d.checks) ? d.checks : [];
     var chipsEl = document.getElementById('health-chips');
     chipsEl.innerHTML = checks.map(function (c) {
-      var st = ['green', 'yellow', 'red', 'gray'].indexOf(c.status) >= 0 ? c.status : 'gray';
-      return '<span class="health-chip"><span class="hc-dot ' + st + '"></span>' + esc(c.label || c.id || '') + '</span>';
+      var s5 = chipStateOf(c);
+      var dotHtml = s5 === 'stale' ? '<span class="hc-dot stale" aria-hidden="true">⏱</span>' : '<span class="hc-dot ' + s5 + '"></span>';
+      var title = (c.label || c.id || '') + '（' + (CHIP_STATE_LABEL[s5] || s5) + '）';
+      return '<span class="health-chip" title="' + esc(title) + '">' + dotHtml + esc(c.label || c.id || '') + '</span>';
     }).join('');
     document.getElementById('health-detail-body').innerHTML = checks.map(function (c) {
       return '<tr><td>' + esc(c.label || c.id || '') + '</td><td>' +
