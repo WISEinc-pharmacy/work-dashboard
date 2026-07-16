@@ -922,7 +922,7 @@
   }
 
   // ── タスク一覧 ─────────────────────────────────────────────────────────
-  var TYPE_CLASSES = { '夜間バッチ': 'batch', 'プロジェクト': 'pj', 'ウィッシュ': 'wl', '山内確認': 'reaction' };
+  var TYPE_CLASSES = { '夜間バッチ': 'batch', 'プロジェクト': 'pj', 'ウィッシュ': 'wl', '山内確認': 'reaction', '改善要望': 'improve' };
   var statusOrder = { open: -1, needs_review: 0, failed: 1, pending: 2, waiting: 2.5, active: 3, priority: 4, wish: 5, done: 6 };
 
   function renderTasks(tasks) {
@@ -935,7 +935,7 @@
     // チップ（初回または tasks 数が変わったとき再生成）
     var chipsDiv = document.getElementById('chips');
     chipsDiv.innerHTML = '';
-    ['すべて', '夜間バッチ', 'プロジェクト', 'ウィッシュ', '山内確認'].forEach(function (name) {
+    ['すべて', '夜間バッチ', 'プロジェクト', 'ウィッシュ', '山内確認', '改善要望'].forEach(function (name) {
       var count = name === 'すべて' ? tasks.length :
         tasks.filter(function (t) { return t.type === name; }).length;
       var btn = document.createElement('button');
