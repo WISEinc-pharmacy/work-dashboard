@@ -279,78 +279,6 @@
   .instr-badge.done     { background: var(--sem-ok-bg); color: var(--sem-ok-text); }
   .instr-badge.failed   { background: var(--sem-err-bg); color: var(--sem-err-text); }
   .instr-badge.rejected_unauthorized { background: var(--sem-err-bg); color: var(--sem-err-text); }
-
-  /* AI組織ヘルスバンド (id="ai-org-health") — v1 ここから ─────────────── */
-  #ai-org-health {
-    border-radius: var(--radius-md); border: 1px solid var(--color-border);
-    background: var(--color-surface); margin-bottom: var(--space-6);
-    overflow: hidden; transition: background-color .2s ease, border-color .2s ease;
-  }
-  #ai-org-health[data-state="green"]  { background: var(--sem-ok-bg);   border-color: #86efac; }
-  #ai-org-health[data-state="yellow"] { background: var(--sem-warn-bg); border-color: var(--sem-warn-border); }
-  #ai-org-health[data-state="red"]    { background: var(--sem-err-bg);  border-color: #fca5a5; }
-  #ai-org-health[data-state="gray"],
-  #ai-org-health[data-state="stale"],
-  #ai-org-health[data-state="loading"] { background: var(--color-bg); border-color: var(--color-border); }
-
-  #health-head {
-    display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
-    padding: var(--space-4) var(--space-6); cursor: pointer; flex-wrap: wrap;
-  }
-  #health-head:focus { outline: 2px solid var(--color-primary); outline-offset: -2px; }
-  .health-main { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
-  .health-dot { font-size: 1.8rem; line-height: 1; flex: none; }
-  .health-headline { font-size: var(--text-xl); font-weight: 700; color: var(--color-text); }
-  .health-side { display: flex; align-items: center; gap: var(--space-3); color: var(--color-text-sub); font-size: var(--text-sm); white-space: nowrap; }
-  .health-toggle { font-size: var(--text-xs); }
-
-  .health-stale-banner, .health-note-banner {
-    margin: 0 var(--space-6) var(--space-3); padding: 8px 14px; border-radius: var(--radius-sm);
-    font-size: var(--text-sm); font-weight: 600;
-  }
-  .health-stale-banner { background: var(--sem-warn-bg); color: var(--sem-warn-text); border: 1px solid var(--sem-warn-border); }
-  .health-note-banner { background: var(--color-surface); color: var(--color-text-sub); border: 1px solid var(--color-border); font-weight: normal; }
-
-  .health-today { padding: 0 var(--space-6) var(--space-3); }
-  .health-today-title { font-size: var(--text-sm); font-weight: 700; color: var(--color-text-sub); margin-bottom: 6px; }
-  .health-today-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-  .health-today-item { display: flex; align-items: baseline; gap: 8px; font-size: var(--text-sm); line-height: 1.5; flex-wrap: wrap; }
-  .health-today-item .hti-rank { color: var(--color-text-sub); font-size: var(--text-xs); flex: none; min-width: 1.4em; }
-  .health-today-item .hti-title { font-weight: 700; color: var(--color-text); }
-  .health-today-item .hti-detail { color: var(--color-text-sub); }
-  .health-today-item .hti-source {
-    font-size: var(--text-xs); padding: 1px 8px; border-radius: var(--radius-full);
-    background: var(--sem-info-bg); color: var(--sem-info-text); white-space: nowrap;
-  }
-
-  .health-chips { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 var(--space-6) var(--space-4); }
-  .health-chip {
-    display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-xs);
-    padding: 4px 12px; border-radius: var(--radius-full); background: var(--color-surface);
-    border: 1px solid var(--color-border); color: var(--color-text);
-  }
-  .health-chip .hc-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: #94a3b8; display: inline-block; }
-  .health-chip .hc-dot.green  { background: #16a34a; }
-  .health-chip .hc-dot.yellow { background: #d97706; }
-  .health-chip .hc-dot.red    { background: #dc2626; }
-  .health-chip .hc-dot.gray   { background: #94a3b8; }
-
-  .health-detail { border-top: 1px solid var(--color-border); padding: var(--space-4) var(--space-6); }
-  .health-detail-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .health-detail table { width: 100%; border-collapse: collapse; background: var(--color-surface); }
-  .health-detail th, .health-detail td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--color-border); font-size: var(--text-sm); }
-  .health-detail th { color: var(--color-text-sub); font-weight: 600; white-space: nowrap; }
-
-  @media (max-width: 640px) {
-    #health-head { padding: var(--space-3) var(--space-4); }
-    .health-headline { font-size: var(--text-lg); }
-    .health-dot { font-size: 1.5rem; }
-    .health-side { width: 100%; justify-content: space-between; }
-    .health-today, .health-chips { padding-left: var(--space-4); padding-right: var(--space-4); }
-    .health-stale-banner, .health-note-banner { margin-left: var(--space-4); margin-right: var(--space-4); }
-    .health-detail { padding: var(--space-3) var(--space-4); }
-  }
-  /* AI組織ヘルスバンド ここまで ───────────────────────────────────────── */
 </style>
 </head>
 <body>
@@ -398,35 +326,6 @@
   <a href="tools.html" style="margin-left:4px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 14px;border-radius:9999px;font-size:0.875rem;text-decoration:none;">📦 ツール</a>
 </header>
 <main>
-  <!-- AI組織ヘルスバンド (id="ai-org-health") — v1。データは Firestore ai_org_health/current（読取専用・別担当が書込） -->
-  <section id="ai-org-health" data-state="loading" aria-live="polite">
-    <div id="health-head" role="button" tabindex="0" aria-expanded="false" aria-controls="health-detail">
-      <div class="health-main">
-        <span class="health-dot" id="health-dot">⚪</span>
-        <span class="health-headline" id="health-headline">読み込み中…</span>
-      </div>
-      <div class="health-side">
-        <span id="health-updated"></span>
-        <span class="health-toggle" id="health-toggle">▼ 詳細</span>
-      </div>
-    </div>
-    <div class="health-stale-banner" id="health-stale-banner" style="display:none;"></div>
-    <div class="health-note-banner" id="health-note-banner" style="display:none;"></div>
-    <div class="health-today" id="health-today-wrap" style="display:none;">
-      <div class="health-today-title">📌 今日やること</div>
-      <ul class="health-today-list" id="health-today-list"></ul>
-    </div>
-    <div class="health-chips" id="health-chips"></div>
-    <div class="health-detail" id="health-detail" style="display:none;">
-      <div class="health-detail-table-wrap">
-        <table>
-          <thead><tr><th>項目</th><th>値</th><th>詳細</th></tr></thead>
-          <tbody id="health-detail-body"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
   <div id="error-box"></div>
 
   <!-- 指示入力欄（adminのみ表示） -->
@@ -523,7 +422,6 @@
     auth.onAuthStateChanged(function (user) {
       if (!user) {
         if (unsubscribeDashboard) { unsubscribeDashboard(); unsubscribeDashboard = null; }
-        if (window.AIOrgHealth) window.AIOrgHealth.stop();
         showLoginOverlay();
         return;
       }
@@ -600,7 +498,6 @@
     }
     subscribeDashboard();
     if (isAdmin) subscribeInstructions();
-    if (window.AIOrgHealth) window.AIOrgHealth.start();
   }
 
   // ── Firestore 購読 ────────────────────────────────────────────────────
@@ -922,7 +819,7 @@
   }
 
   // ── タスク一覧 ─────────────────────────────────────────────────────────
-  var TYPE_CLASSES = { '夜間バッチ': 'batch', 'プロジェクト': 'pj', 'ウィッシュ': 'wl', '山内確認': 'reaction', '改善要望': 'improve' };
+  var TYPE_CLASSES = { '夜間バッチ': 'batch', 'プロジェクト': 'pj', 'ウィッシュ': 'wl', '山内確認': 'reaction' };
   var statusOrder = { open: -1, needs_review: 0, failed: 1, pending: 2, waiting: 2.5, active: 3, priority: 4, wish: 5, done: 6 };
 
   function renderTasks(tasks) {
@@ -935,7 +832,7 @@
     // チップ（初回または tasks 数が変わったとき再生成）
     var chipsDiv = document.getElementById('chips');
     chipsDiv.innerHTML = '';
-    ['すべて', '夜間バッチ', 'プロジェクト', 'ウィッシュ', '山内確認', '改善要望'].forEach(function (name) {
+    ['すべて', '夜間バッチ', 'プロジェクト', 'ウィッシュ', '山内確認'].forEach(function (name) {
       var count = name === 'すべて' ? tasks.length :
         tasks.filter(function (t) { return t.type === name; }).length;
       var btn = document.createElement('button');
@@ -1309,214 +1206,6 @@
   // ── 起動 ─────────────────────────────────────────────────────────────
   init();
 
-})();
-</script>
-
-<!-- AI組織ヘルスバンド (id="ai-org-health") — 上のメインIIFEから隔離した独立モジュール。
-     window.AIOrgHealth.start()/stop() のみを外部（grantAccess / onAuthStateChanged の !user 分岐）から呼ぶ。 -->
-<script>
-(function () {
-  'use strict';
-
-  // データ契約: Firestore ai_org_health/current （読取専用。書込は別担当のbuild_health_data.mjs側）
-  var STALE_MS = 45 * 60 * 1000; // 45分を超えたら「収集停止」扱い（INC-162: 収集系自体の死活可視化）
-  var REFRESH_MS = 60 * 1000;    // onSnapshotが来なくても経過時間を再評価する間隔
-
-  var unsubscribe = null;
-  var refreshTimer = null;
-  var lastData = null;
-  var lastError = null;
-  var docExists = null; // null=未取得, true/false
-
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
-    });
-  }
-
-  function fmtHHMM(d) {
-    try {
-      return new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Tokyo' }).format(d);
-    } catch (e) {
-      return d.getHours() + ':' + ('0' + d.getMinutes()).slice(-2);
-    }
-  }
-  function fmtMMDDHHMM(d) {
-    try {
-      var parts = new Intl.DateTimeFormat('ja-JP', {
-        month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Tokyo'
-      }).formatToParts(d);
-      var map = {};
-      parts.forEach(function (p) { map[p.type] = p.value; });
-      return map.month + '/' + map.day + ' ' + map.hour + ':' + map.minute;
-    } catch (e) {
-      return d.toLocaleString();
-    }
-  }
-  function parseGeneratedAt(v) {
-    if (!v) return null;
-    var d = new Date(v);
-    return isNaN(d.getTime()) ? null : d;
-  }
-
-  var DOT = { green: '🟢', yellow: '🟡', red: '🔴' };
-
-  function setState(state) {
-    var root = document.getElementById('ai-org-health');
-    if (root) root.setAttribute('data-state', state);
-  }
-  function hide(id) { var el = document.getElementById(id); if (el) el.style.display = 'none'; }
-  function show(id) { var el = document.getElementById(id); if (el) el.style.display = ''; }
-
-  function renderLoading() {
-    setState('loading');
-    document.getElementById('health-dot').textContent = '⚪';
-    document.getElementById('health-headline').textContent = '読み込み中…';
-    document.getElementById('health-updated').textContent = '';
-    hide('health-stale-banner');
-    hide('health-note-banner');
-    hide('health-today-wrap');
-    document.getElementById('health-chips').innerHTML = '';
-    document.getElementById('health-detail-body').innerHTML = '';
-  }
-
-  function renderNoData() {
-    setState('gray');
-    document.getElementById('health-dot').textContent = '⚪';
-    document.getElementById('health-headline').textContent = 'ヘルスデータ収集待ち';
-    document.getElementById('health-updated').textContent = '';
-    hide('health-stale-banner');
-    document.getElementById('health-note-banner').textContent =
-      'まだ ai_org_health/current が作成されていません（収集スクリプトの初回実行待ち）。';
-    show('health-note-banner');
-    hide('health-today-wrap');
-    document.getElementById('health-chips').innerHTML = '';
-    document.getElementById('health-detail-body').innerHTML = '';
-  }
-
-  function renderError(message) {
-    setState('gray');
-    document.getElementById('health-dot').textContent = '⚪';
-    document.getElementById('health-headline').textContent = 'ヘルスデータを読み込めません';
-    document.getElementById('health-updated').textContent = '';
-    hide('health-stale-banner');
-    document.getElementById('health-note-banner').textContent = '⚠️ ' + (message || '不明なエラー');
-    show('health-note-banner');
-    hide('health-today-wrap');
-    document.getElementById('health-chips').innerHTML = '';
-    document.getElementById('health-detail-body').innerHTML = '';
-  }
-
-  function renderData(d) {
-    var overall = (d.overall === 'green' || d.overall === 'yellow' || d.overall === 'red') ? d.overall : 'gray';
-    var genDate = parseGeneratedAt(d.generatedAt);
-    var ageMs = genDate ? (Date.now() - genDate.getTime()) : null;
-    var isStale = (ageMs === null) || (ageMs > STALE_MS);
-
-    document.getElementById('health-headline').textContent = d.headline || '（見出しなし）';
-    document.getElementById('health-dot').textContent = isStale ? '⚪' : (DOT[overall] || '⚪');
-    document.getElementById('health-updated').textContent = genDate ? ('更新 ' + fmtHHMM(genDate)) : '';
-
-    if (isStale) {
-      setState('stale');
-      document.getElementById('health-stale-banner').textContent =
-        '⚠️ 収集が止まっています（最終: ' + (genDate ? fmtMMDDHHMM(genDate) : '不明') + '）';
-      show('health-stale-banner');
-    } else {
-      setState(overall);
-      hide('health-stale-banner');
-    }
-    hide('health-note-banner');
-
-    // 📌 今日やること（priority昇順・最大8件）
-    var today = Array.isArray(d.today) ? d.today.slice() : [];
-    today.sort(function (a, b) { return (a.priority || 9) - (b.priority || 9); });
-    today = today.slice(0, 8);
-    var listEl = document.getElementById('health-today-list');
-    if (today.length) {
-      listEl.innerHTML = today.map(function (t, i) {
-        return '<li class="health-today-item">' +
-          '<span class="hti-rank">' + (i + 1) + '.</span>' +
-          '<span class="hti-title">' + esc(t.title || '') + '</span>' +
-          (t.detail ? '<span class="hti-detail">' + esc(t.detail) + '</span>' : '') +
-          (t.source ? '<span class="hti-source">' + esc(t.source) + '</span>' : '') +
-          '</li>';
-      }).join('');
-      show('health-today-wrap');
-    } else {
-      listEl.innerHTML = '';
-      hide('health-today-wrap');
-    }
-
-    // checksチップ行 + クリックで開く詳細テーブル
-    var checks = Array.isArray(d.checks) ? d.checks : [];
-    var chipsEl = document.getElementById('health-chips');
-    chipsEl.innerHTML = checks.map(function (c) {
-      var st = ['green', 'yellow', 'red', 'gray'].indexOf(c.status) >= 0 ? c.status : 'gray';
-      return '<span class="health-chip"><span class="hc-dot ' + st + '"></span>' + esc(c.label || c.id || '') + '</span>';
-    }).join('');
-    document.getElementById('health-detail-body').innerHTML = checks.map(function (c) {
-      return '<tr><td>' + esc(c.label || c.id || '') + '</td><td>' +
-        esc(c.value != null ? c.value : '') + '</td><td>' + esc(c.detail || '') + '</td></tr>';
-    }).join('') || '<tr><td colspan="3" style="color:var(--color-text-sub);">チェック項目なし</td></tr>';
-  }
-
-  function render() {
-    if (lastError) { renderError(lastError); return; }
-    if (docExists === false) { renderNoData(); return; }
-    if (docExists === true && lastData) { renderData(lastData); return; }
-    renderLoading();
-  }
-
-  function bindToggle() {
-    var head = document.getElementById('health-head');
-    var detail = document.getElementById('health-detail');
-    if (!head || !detail) return;
-    function toggle() {
-      var open = detail.style.display !== 'none';
-      detail.style.display = open ? 'none' : '';
-      head.setAttribute('aria-expanded', open ? 'false' : 'true');
-      document.getElementById('health-toggle').textContent = open ? '▼ 詳細' : '▲ 詳細';
-    }
-    head.addEventListener('click', toggle);
-    head.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
-    });
-  }
-
-  // ── 外部公開API（呼び出し元: メインIIFEの grantAccess / onAuthStateChanged の !user 分岐のみ）──
-  function start() {
-    stop();
-    renderLoading();
-    var db = firebase.firestore();
-    unsubscribe = db.collection('ai_org_health').doc('current').onSnapshot(
-      function (snap) {
-        lastError = null;
-        docExists = snap.exists;
-        lastData = snap.exists ? snap.data() : null;
-        render();
-      },
-      function (e) {
-        lastError = (e && e.message) ? e.message : String(e);
-        render();
-      }
-    );
-    if (!refreshTimer) {
-      refreshTimer = setInterval(function () { if (lastData) render(); }, REFRESH_MS);
-    }
-  }
-
-  function stop() {
-    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-    if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
-    lastData = null; lastError = null; docExists = null;
-    renderLoading();
-  }
-
-  bindToggle();
-  renderLoading();
-
-  window.AIOrgHealth = { start: start, stop: stop };
 })();
 </script>
 </body>
