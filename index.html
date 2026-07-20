@@ -25,7 +25,7 @@
   }
   header {
     background: var(--color-primary); color: #fff; padding: var(--space-4) var(--space-6);
-    display: flex; align-items: baseline; gap: var(--space-4); flex-wrap: wrap;
+    display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
     position: sticky; top: 0; z-index: 200;
   }
   header h1 { font-size: var(--text-2xl); margin: 0; font-weight: 700; }
@@ -35,6 +35,21 @@
     background: #fef3c7; color: #b45309; border: 2px solid #fcd34d;
     padding: 5px 16px; border-radius: var(--radius-full);
   }
+  /* ☰ ハンバーガーメニューボタン（ヘッダー右端。状態ドットを重ね表示） */
+  #menu-btn {
+    position: relative; flex: none; width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.35);
+    border-radius: var(--radius-sm); color: #fff; font-size: 1.5rem; line-height: 1;
+    cursor: pointer; padding: 0;
+  }
+  #menu-btn:hover { background: rgba(255,255,255,.24); }
+  #menu-btn:focus { outline: 2px solid #fff; outline-offset: 2px; }
+  #menu-status-dot {
+    position: absolute; top: 3px; right: 3px; width: 10px; height: 10px; border-radius: 50%;
+    background: #22c55e; border: 2px solid var(--color-primary);
+  }
+  #menu-status-dot.err { background: #ef4444; }
   main { max-width: 1280px; margin: 0 auto; padding: var(--space-6) var(--space-6) 80px; }
   h2 { font-size: var(--text-xl); margin: var(--space-8) 0 var(--space-3); color: var(--color-text); }
   h2 .count { color: var(--color-text-sub); font-weight: normal; font-size: var(--text-base); }
@@ -161,6 +176,47 @@
     padding: var(--space-4); font-size: var(--text-sm); white-space: pre-wrap; word-break: break-all;
     font-family: Consolas, "MS Gothic", monospace;
   }
+
+  /* ハンバーガーメニュー（ナビゲーションサイドバー。既存の作業詳細サイドバー #sidebar とは別コンポーネント） */
+  #nav-overlay {
+    position: fixed; inset: 0; background: rgba(30, 41, 59, 0.35);
+    opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 950;
+  }
+  #nav-panel {
+    position: fixed; top: 0; right: 0; height: 100%; width: min(320px, 88vw);
+    background: var(--color-surface); box-shadow: -6px 0 24px rgba(0,0,0,.18);
+    transform: translateX(105%); transition: transform .25s ease-out; display: flex; flex-direction: column;
+    z-index: 951;
+  }
+  body.nav-open #nav-overlay { opacity: 1; pointer-events: auto; }
+  body.nav-open #nav-panel { transform: translateX(0); }
+  #nav-head { background: var(--color-primary); color: #fff; padding: var(--space-4); display: flex; gap: var(--space-2); align-items: center; }
+  #nav-head h3 { margin: 0; font-size: var(--text-lg); flex: 1; }
+  #nav-close { background: none; border: none; color: rgba(255,255,255,.85); font-size: var(--text-2xl); cursor: pointer; padding: 4px 8px; min-width: 44px; min-height: 44px; }
+  #nav-close:hover { color: #fff; }
+  #nav-close:focus { outline: 2px solid #fff; }
+  #nav-body { padding: var(--space-4) var(--space-5); overflow-y: auto; flex: 1; }
+  #nav-panel .meta { color: var(--color-text-sub); font-size: var(--text-sm); }
+  #nav-panel .engine { margin-left: 0; display: inline-block; }
+  .nav-group { display: flex; flex-direction: column; gap: 8px; }
+  .nav-group-label { font-size: var(--text-xs); font-weight: 700; color: var(--color-text-sub); letter-spacing: .04em; margin: 2px 0; }
+  .nav-divider { height: 1px; background: var(--color-border); border: none; margin: var(--space-4) 0; }
+  .nav-item { display: flex; align-items: center; min-height: 44px; }
+  .nav-link, .nav-btn {
+    display: flex; align-items: center; width: 100%; min-height: 44px;
+    background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+    color: var(--color-text); text-decoration: none; font-family: var(--font-family);
+    font-size: var(--text-sm); font-weight: 600; padding: 0 14px; cursor: pointer;
+  }
+  .nav-link:hover, .nav-btn:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); }
+  .nav-link:focus, .nav-btn:focus { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  .nav-status { font-size: var(--text-sm); color: var(--color-text-sub); }
+  .nav-btn-logout {
+    background: transparent; border: 1px dashed var(--color-border); color: var(--sem-err-text);
+    margin-top: 8px;
+  }
+  .nav-btn-logout:hover { border-color: #fca5a5; background: var(--sem-err-bg); color: var(--sem-err-text); }
+
   #error-box { background: var(--sem-err-bg); color: var(--sem-err-text); padding: var(--space-4); border-radius: var(--radius-md); margin-top: var(--space-6); display: none; }
 
   /* 認証オーバーレイ */
@@ -312,7 +368,15 @@
   .health-note-banner { background: var(--color-surface); color: var(--color-text-sub); border: 1px solid var(--color-border); font-weight: normal; }
 
   .health-today { padding: 0 var(--space-6) var(--space-3); }
-  .health-today-title { font-size: var(--text-sm); font-weight: 700; color: var(--color-text-sub); margin-bottom: 6px; }
+  .health-today-summary {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
+    background: none; border: none; padding: 0; margin-bottom: 6px; cursor: pointer;
+    font-size: var(--text-sm); font-weight: 700; color: var(--color-text-sub);
+    font-family: var(--font-family); text-align: left;
+  }
+  .health-today-summary:hover { color: var(--color-text); }
+  .health-today-summary:focus { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  .health-today-caret { font-size: var(--text-xs); flex: none; }
   .health-today-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
   .health-today-item { display: flex; align-items: baseline; gap: 8px; font-size: var(--text-sm); line-height: 1.5; flex-wrap: wrap; }
   .health-today-item .hti-rank { color: var(--color-text-sub); font-size: var(--text-xs); flex: none; min-width: 1.4em; }
@@ -404,14 +468,10 @@
 
 <header>
   <h1>Wise 作業ダッシュボード</h1>
-  <span class="meta" id="generated"></span>
-  <span class="meta" id="realtime-status">● リアルタイム購読中</span>
-  <span class="engine" id="engine"></span>
-  <button id="admin-btn" style="display:none;margin-left:8px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 14px;border-radius:9999px;font-size:0.875rem;cursor:pointer;">⚙️ 管理</button>
-  <button id="logout-btn" style="display:none;margin-left:4px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.8);padding:4px 14px;border-radius:9999px;font-size:0.875rem;cursor:pointer;">ログアウト</button>
-  <button id="help-btn" style="margin-left:8px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 14px;border-radius:9999px;font-size:0.875rem;cursor:pointer;">使い方</button>
-  <a href="skills.html" style="margin-left:4px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 14px;border-radius:9999px;font-size:0.875rem;text-decoration:none;">⚡ スキル</a>
-  <a href="tools.html" style="margin-left:4px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 14px;border-radius:9999px;font-size:0.875rem;text-decoration:none;">📦 ツール</a>
+  <button id="menu-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="nav-panel" aria-label="メニューを開く">
+    <span aria-hidden="true">☰</span>
+    <span id="menu-status-dot" aria-hidden="true"></span>
+  </button>
 </header>
 <main>
   <!-- AI組織ヘルスバンド (id="ai-org-health") — v1。データは Firestore ai_org_health/current（読取専用・別担当が書込） -->
@@ -429,7 +489,10 @@
     <div class="health-stale-banner" id="health-stale-banner" style="display:none;"></div>
     <div class="health-note-banner" id="health-note-banner" style="display:none;"></div>
     <div class="health-today" id="health-today-wrap" style="display:none;">
-      <div class="health-today-title">📌 今日やること</div>
+      <button type="button" class="health-today-summary" id="health-today-summary" aria-expanded="false" aria-controls="health-today-list">
+        <span id="health-today-summary-text">📌 今日やること</span>
+        <span class="health-today-caret" id="health-today-caret" aria-hidden="true">▼</span>
+      </button>
       <ul class="health-today-list" id="health-today-list"></ul>
     </div>
     <div class="health-chips" id="health-chips"></div>
@@ -477,6 +540,32 @@
     <div class="feed" id="feed"></div>
   </section>
 </main>
+
+<div id="nav-overlay"></div>
+<nav id="nav-panel" aria-label="メニュー">
+  <div id="nav-head"><h3>メニュー</h3><button id="nav-close" title="閉じる" aria-label="メニューを閉じる">✕</button></div>
+  <div id="nav-body">
+    <div class="nav-group">
+      <div class="nav-group-label">機能</div>
+      <a id="nav-skills-link" href="skills.html" class="nav-item nav-link">⚡ スキル</a>
+      <a id="nav-tools-link" href="tools.html" class="nav-item nav-link">📦 ツール</a>
+    </div>
+    <hr class="nav-divider">
+    <div class="nav-group">
+      <div class="nav-group-label">設定・管理</div>
+      <div class="nav-item nav-status"><span class="engine" id="engine"></span></div>
+      <button id="admin-btn" class="nav-item nav-btn" style="display:none;">⚙️ 管理</button>
+    </div>
+    <hr class="nav-divider">
+    <div class="nav-group">
+      <div class="nav-group-label">システム</div>
+      <div class="nav-item nav-status"><span class="meta" id="generated"></span></div>
+      <div class="nav-item nav-status"><span class="meta" id="realtime-status">● リアルタイム購読中</span></div>
+      <button id="help-btn" class="nav-item nav-btn">❓ 使い方</button>
+      <button id="logout-btn" class="nav-item nav-btn nav-btn-logout" style="display:none;">🚪 ログアウト</button>
+    </div>
+  </div>
+</nav>
 
 <div id="overlay"></div>
 <aside id="sidebar" aria-label="作業詳細">
@@ -532,6 +621,7 @@
     bindLoginButton();
     bindLogoutButton();
     bindSidebar();
+    bindNavMenu();
     bindHelpButton();
     bindAdminModal();
     bindInstructionBox();
@@ -624,6 +714,7 @@
   function subscribeDashboard() {
     if (unsubscribeDashboard) unsubscribeDashboard();
     var realtimeStatus = document.getElementById('realtime-status');
+    var statusDot = document.getElementById('menu-status-dot');
     unsubscribeDashboard = db.collection('dashboard_data').doc('latest').onSnapshot(
       function (snap) {
         if (!snap.exists) {
@@ -632,6 +723,7 @@
         }
         realtimeStatus.textContent = '● リアルタイム購読中';
         realtimeStatus.style.color = '';
+        if (statusDot) statusDot.classList.remove('err');
         var D = snap.data();
         lastD = D;
         renderDashboard(D);
@@ -639,6 +731,7 @@
       function (e) {
         realtimeStatus.textContent = '⚠️ 接続エラー';
         realtimeStatus.style.color = '#fca5a5';
+        if (statusDot) statusDot.classList.add('err');
         showError('データ読み込みエラー: ' + e.message);
       }
     );
@@ -1059,6 +1152,28 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSidebar(); });
   }
 
+  // ── ☰ ハンバーガーメニュー（ヘッダー右端。既存の作業詳細サイドバーとは独立） ──
+  function bindNavMenu() {
+    var btn = document.getElementById('menu-btn');
+    var overlay = document.getElementById('nav-overlay');
+    var closeBtn = document.getElementById('nav-close');
+    if (!btn || !overlay || !closeBtn) return;
+    function openNav() {
+      document.body.classList.add('nav-open');
+      btn.setAttribute('aria-expanded', 'true');
+    }
+    function closeNav() {
+      document.body.classList.remove('nav-open');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+    btn.addEventListener('click', function () {
+      if (document.body.classList.contains('nav-open')) closeNav(); else openNav();
+    });
+    overlay.addEventListener('click', closeNav);
+    closeBtn.addEventListener('click', closeNav);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeNav(); });
+  }
+
   // ── 使い方ボタン ──────────────────────────────────────────────────────
   function bindHelpButton() {
     document.getElementById('help-btn').addEventListener('click', function () {
@@ -1345,6 +1460,13 @@
   var lastError = null;
   var docExists = null; // null=未取得, true/false
 
+  // 「今日やること」開閉状態（デフォルト折りたたみ・localStorageに記憶して次回訪問時に復元）
+  var TODAY_EXPANDED_KEY = 'wise_dashboard_today_expanded';
+  var todayExpanded = false;
+  try {
+    todayExpanded = localStorage.getItem(TODAY_EXPANDED_KEY) === 'true';
+  } catch (e) { todayExpanded = false; }
+
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
@@ -1384,6 +1506,34 @@
   }
   function hide(id) { var el = document.getElementById(id); if (el) el.style.display = 'none'; }
   function show(id) { var el = document.getElementById(id); if (el) el.style.display = ''; }
+
+  // 「今日やること」urgent判定: 復旧タスク(health_check由来の赤チェック起因)、または
+  // confirmation_queue由来でdetailに urgency=urgent を含むもの（サーバ側buildToday()のdetail文字列を参照）。
+  function isUrgentToday(t) {
+    if (String((t && t.source) || '').indexOf('health_check:') === 0) return true;
+    if (/urgency=urgent/.test(String((t && t.detail) || ''))) return true;
+    return false;
+  }
+
+  function applyTodayExpandState() {
+    var listEl = document.getElementById('health-today-list');
+    var btn = document.getElementById('health-today-summary');
+    var caret = document.getElementById('health-today-caret');
+    if (!listEl || !btn) return;
+    listEl.style.display = todayExpanded ? '' : 'none';
+    btn.setAttribute('aria-expanded', todayExpanded ? 'true' : 'false');
+    if (caret) caret.textContent = todayExpanded ? '▲' : '▼';
+  }
+
+  function bindTodayToggle() {
+    var btn = document.getElementById('health-today-summary');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      todayExpanded = !todayExpanded;
+      try { localStorage.setItem(TODAY_EXPANDED_KEY, todayExpanded ? 'true' : 'false'); } catch (e) { /* ignore */ }
+      applyTodayExpandState();
+    });
+  }
 
   function renderLoading() {
     setState('loading');
@@ -1451,6 +1601,12 @@
     today = today.slice(0, 8);
     var listEl = document.getElementById('health-today-list');
     if (today.length) {
+      var todayUrgentCount = today.filter(isUrgentToday).length;
+      var todayJudgeCount = today.filter(function (t) { return t.owner !== 'ai'; }).length;
+      var summaryTextEl = document.getElementById('health-today-summary-text');
+      if (summaryTextEl) {
+        summaryTextEl.textContent = '📋 今日やること ' + today.length + '件（🔴urgent ' + todayUrgentCount + '・👤判断 ' + todayJudgeCount + '）';
+      }
       listEl.innerHTML = today.map(function (t, i) {
         // owner: "ai"|"human"（表示専用バッジ。未付与の旧データはhuman扱いにフォールバック＝安全側）
         var ownerBadge = t.owner === 'ai' ? '🤖' : '👤';
@@ -1464,6 +1620,7 @@
           '</li>';
       }).join('');
       show('health-today-wrap');
+      applyTodayExpandState();
     } else {
       listEl.innerHTML = '';
       hide('health-today-wrap');
@@ -1548,6 +1705,7 @@
   }
 
   bindToggle();
+  bindTodayToggle();
   renderLoading();
 
   window.AIOrgHealth = { start: start, stop: stop };
